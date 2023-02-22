@@ -1,7 +1,9 @@
-export const handleVoidPromise = <T>(promise: (_event: React.SyntheticEvent) => Promise<T>) => {
-  return (event: React.SyntheticEvent) => {
+export const handleVoidPromise = <T, P extends unknown[]>(
+  promise: (...args: P) => Promise<T>
+) => {
+  return (...args: P) => {
     if (promise) {
-      promise(event).catch((error) => {
+      promise(...args).catch((error) => {
         console.error("Unexpected error:", error);
       });
     }

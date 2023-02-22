@@ -18,14 +18,7 @@ export const loadStaticDts = async (
   results.forEach((result) => {
     if (result.status === "fulfilled") {
       const { dts, libName } = result.value;
-      const modelUri = monaco.Uri.parse(
-        `inmemory://model/types/${libName}/index.d.ts`
-      );
-      monaco.editor.createModel(
-        `declare module "${libName}" { ${dts} }`,
-        "typescript",
-        modelUri
-      );
+      //createModel(monaco, libName, dts);
       monaco.languages.typescript.typescriptDefaults.addExtraLib(
         `declare module "${libName}" { ${dts} }`,
         `inmemory://model//${libName}.d.ts`
@@ -39,4 +32,14 @@ export const loadStaticDts = async (
       }
     }
   });
+};
+export const createModel = (monaco: Monaco, libName: string, dts: string) => {
+  const modelUri = monaco.Uri.parse(
+    `inmemory://model/types/${libName}/index.d.ts`
+  );
+  monaco.editor.createModel(
+    `declare module "${libName}" { ${dts} }`,
+    "typescript",
+    modelUri
+  );
 };

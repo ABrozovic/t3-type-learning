@@ -1,7 +1,9 @@
 import { useState } from "react";
+import { api } from "../utils/api";
 
 export default function Rainbow() {
   const [hovered, setHovered] = useState(false);
+  const test = api.subject.test.useInfiniteQuery({ slug: "basic-types" });
 
   return (
     <div

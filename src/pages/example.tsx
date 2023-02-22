@@ -3,18 +3,30 @@ import {
   ArrowLongLeftIcon,
   ArrowLongRightIcon,
 } from "@heroicons/react/20/solid";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import PageNumber from "../components/page-number";
-const numOfPages = Array(30).fill(0);
 
-export default function Pagination() {
+type PaginationProps = {
+  numberOfPages: number | undefined;
+  onPageChange: (pageNumber: number) => void;
+};
+
+export default function Pagination({
+  numberOfPages = 1,
+  onPageChange,
+}: PaginationProps) {
+  const numOfPages = useRef(Array(numberOfPages).fill(0));
   const [currentPage, setCurrentPage] = useState(1);
   function handleSelectPage(page: number): void {
+    handlePageChange(page);
     setCurrentPage(page);
   }
 
   const getVisiblePages = useMemo(() => {
-    const pages = Array.from({ length: numOfPages.length }, (_, i) => i + 1);
+    const pages = Array.from(
+      { length: numOfPages.current.length },
+      (_, i) => i + 1
+    );
     if (pages.length <= 7) {
       return pages;
     }
@@ -58,11 +70,16 @@ export default function Pagination() {
     ];
   }, [currentPage]);
   const handleArrowClick = (index: number) => {
-    setCurrentPage((page) =>
-      page + index === 0 || page + index > numOfPages.length 
-        ? page
-        : page + index
-    );
+    setCurrentPage((page) => {
+      if (page + index === 0 || page + index > numOfPages.current.length)
+        return page;
+
+      handlePageChange(page + index);
+      return page + index;
+    });
+  };
+  const handlePageChange = (page: number) => {
+    onPageChange(page);
   };
   return (
     <nav className="flex items-center justify-between px-4 sm:px-0">

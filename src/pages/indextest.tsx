@@ -31,47 +31,65 @@ const Home: NextPage = () => {
   const takeRef = useRef(BASE_TAKE);
   const skipRef = useRef(0);
   const utils = api.useContext();
+  const queryPage = useRef(0);
+  const currentPage = useRef(0);
 
   function handleEditorValidation(markers: editor.IMarker[]) {
     !solved && markers.length === 0 && setCheer(true);
   }
 
-  const { data } = api.subject.get.useQuery(
-    {
-      slug: "basic-types",
-      take: BASE_TAKE,
-    },
-    { keepPreviousData: true }
-  );
-
-  const updateData = async (page: number) => {
-    setCurrentChallenge(page - 1);
-    if (page % BASE_TAKE > BASE_TAKE - 2) {
-      skipRef.current = takeRef.current;
-      const newData = await utils.subject.get.fetch({
+  const { data, isFetchingPreviousPage, fetchPreviousPage } =
+    api.subject.test.useInfiniteQuery(
+      {
         slug: "basic-types",
-        skip: skipRef.current,
-        take: takeRef.current,
-      });
-      if (!newData || !data) return;
-      utils.subject.get.setData(
-        {
-          slug: "basic-types",
-          take: BASE_TAKE,
+        take: BASE_TAKE,
+      },
+      {
+        keepPreviousData: true,
+        getPreviousPageParam(lastPage) {
+          return lastPage?.nextCursor;
         },
-        {
-          _count: newData._count,
-          challenges: [...data.challenges, ...newData.challenges],
-          createdAt: data.createdAt,
-          id: data.id,
-          name: data.name,
-          slug: data.slug,
-          updatedAt: data.updatedAt,
-        }
+        select: (data) => ({
+          pages: [...data.pages].reverse(),
+          pageParams: [...data.pageParams].reverse(),
+        }),
+      }
+    );
+  const pages = data?.pages;
+  const flatChallenges = pages?.flatMap((challenges) =>
+    challenges.challenges.map((c) => c.id)
+  );
+  const updateData = async (page: number) => {
+    if (!pages) return;
+    setCurrentChallenge(page - 1);
+    const [currentBatch, shouldFetch] = getNextBatch(page);
+    console.log(
+      "🚀 ~ file: indextest.tsx:60 ~ flatChallenges:",
+      flatChallenges
+    );
+   
+    
+    console.log("🚀 ~ file: indextest.tsx:76 ~ updateData ~ shouldFetch:", shouldFetch)
+    if (!shouldFetch ) return;
+    
+    console.log("Fetching")
+    if (shouldFetch && !isFetchingPreviousPage) {
+      const eh = flatChallenges?.find(
+        (id) => id === pages[queryPage.current]?.challenges[page-1]?.id
       );
+      console.log("🚀 ~ file: indextest.tsx:80 ~ updateData ~ eh:", eh)
+      if(eh) return;
+      await fetchPreviousPage();
     }
   };
 
+  function getNextBatch(pageIndex: number): [number, boolean] {
+    const NEAR_END_THRESHOLD = 2;
+    const batchIndex = Math.floor((pageIndex - 1) / BASE_TAKE) + 1;
+    const pagesLeftInBatch = BASE_TAKE - (pageIndex % BASE_TAKE || BASE_TAKE);
+    const shouldFetchNextBatch = pagesLeftInBatch < NEAR_END_THRESHOLD;
+    return [batchIndex, shouldFetchNextBatch];
+  }
   async function handleEditorWillMount(monaco: Monaco) {
     monaco.languages.typescript.javascriptDefaults.setCompilerOptions({
       jsx: monaco.languages.typescript.JsxEmit.React,
@@ -107,7 +125,12 @@ const Home: NextPage = () => {
 
     const model = editor.getModel();
     model?.setEOL(monaco.editor.EndOfLineSequence.LF);
-    if (data?.challenges[currentChallenge]?.restrictions?.length || 0 > 0) {
+    if (
+      (pages &&
+        pages[queryPage.current]?.challenges[currentChallenge]?.restrictions
+          ?.length) ||
+      0 > 0
+    ) {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
       const constrainedInstance = constrainedEditor(monaco);
       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
@@ -115,7 +138,9 @@ const Home: NextPage = () => {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
       constrainedInstance.addRestrictionsTo(
         model,
-        data?.challenges[currentChallenge]?.restrictions.map(
+        pages[queryPage.current]?.challenges[
+          currentChallenge
+        ]?.restrictions.map(
           ({
             initialRow,
             initialColumn,
@@ -133,6 +158,7 @@ const Home: NextPage = () => {
       );
     }
   }
+  if (!pages) return null;
   return (
     <>
       <div className="h-full  w-full bg-slate-300 p-24 ">
@@ -148,13 +174,15 @@ const Home: NextPage = () => {
               onValidate={handleEditorValidation}
               theme="vs-dark"
               height={"20rem"}
-              value={data?.challenges[currentChallenge]?.problem}
+              value={
+                pages[queryPage.current]?.challenges[currentChallenge]?.problem
+              }
               defaultLanguage="typescript"
               onMount={handleEditorDidMount}
               beforeMount={handleVoidPromise(handleEditorWillMount)}
             />
             <Pagination
-              numberOfPages={data?._count.challenges}
+              numberOfPages={20}
               onPageChange={(page) => updateData(page)}
             />
             <Confetti
@@ -209,7 +237,6 @@ const Home: NextPage = () => {
           </div>
         </div>
       </div>
-      <p>{data && data.name}</p>
     </>
   );
 };
@@ -223,7 +250,7 @@ export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
     ctx: await createTRPCContext(ctx),
     transformer: superjson,
   });
-  await ssg.subject.get.prefetch({ slug, take: BASE_TAKE });
+  await ssg.subject.test.prefetchInfinite({ slug, take: BASE_TAKE });
 
   return {
     props: {
