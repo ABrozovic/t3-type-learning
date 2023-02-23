@@ -22,6 +22,7 @@ export type RangeRestriction = {
   validate?: () => void;
 };
 const BASE_TAKE = 5;
+const BASE_SKIP = 0;
 const Home: NextPage = () => {
   const monacoRef = useRef<Monaco | null>(null);
   const [divRef, { width, height }] = useElementSize();
@@ -40,10 +41,19 @@ const Home: NextPage = () => {
     {
       slug: "basic-types",
       take: BASE_TAKE,
+      skip: BASE_SKIP,
     },
-    { keepPreviousData: true }
-  );
-
+    {
+      keepPreviousData: true,
+      select: (data) => ({
+        ...data,
+        challenges: data?.challenges.map((challenge, index) => ({
+          index: index + BASE_SKIP,
+          challenge: challenge,
+        })),
+      }),
+    }
+  );    
   const updateData = async (page: number) => {
     setCurrentChallenge(page - 1);
     if (page % BASE_TAKE > BASE_TAKE - 2) {
@@ -54,21 +64,21 @@ const Home: NextPage = () => {
         take: takeRef.current,
       });
       if (!newData || !data) return;
-      utils.subject.get.setData(
-        {
-          slug: "basic-types",
-          take: BASE_TAKE,
-        },
-        {
-          _count: newData._count,
-          challenges: [...data.challenges, ...newData.challenges],
-          createdAt: data.createdAt,
-          id: data.id,
-          name: data.name,
-          slug: data.slug,
-          updatedAt: data.updatedAt,
-        }
-      );
+      // utils.subject.get.setData(
+      //   {
+      //     slug: "basic-types",
+      //     take: BASE_TAKE,
+      //   },
+      //   {
+      //     _count: newData._count,
+      //     challenges: [...data.challenges, ...newData.challenges],
+      //     createdAt: data.createdAt,
+      //     id: data.id,
+      //     name: data.name,
+      //     slug: data.slug,
+      //     updatedAt: data.updatedAt,
+      //   }
+      // );
     }
   };
 
@@ -107,7 +117,7 @@ const Home: NextPage = () => {
 
     const model = editor.getModel();
     model?.setEOL(monaco.editor.EndOfLineSequence.LF);
-    if (data?.challenges[currentChallenge]?.restrictions?.length || 0 > 0) {
+    if (!data?.challenges || data?.challenges[currentChallenge]?.challenge.restrictions?.length || 0 > 0) {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
       const constrainedInstance = constrainedEditor(monaco);
       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
@@ -115,7 +125,7 @@ const Home: NextPage = () => {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
       constrainedInstance.addRestrictionsTo(
         model,
-        data?.challenges[currentChallenge]?.restrictions.map(
+        !data?.challenges ||  data?.challenges[currentChallenge]?.challenge.restrictions.map(
           ({
             initialRow,
             initialColumn,
@@ -133,6 +143,7 @@ const Home: NextPage = () => {
       );
     }
   }
+  if(!data || !data.challenges) return null;
   return (
     <>
       <div className="h-full  w-full bg-slate-300 p-24 ">
@@ -148,13 +159,13 @@ const Home: NextPage = () => {
               onValidate={handleEditorValidation}
               theme="vs-dark"
               height={"20rem"}
-              value={data?.challenges[currentChallenge]?.problem}
+              value={data.challenges[currentChallenge]?.challenge.problem}
               defaultLanguage="typescript"
               onMount={handleEditorDidMount}
               beforeMount={handleVoidPromise(handleEditorWillMount)}
             />
             <Pagination
-              numberOfPages={data?._count.challenges}
+              numberOfPages={data?._count?.challenges}
               onPageChange={(page) => updateData(page)}
             />
             <Confetti
@@ -223,7 +234,7 @@ export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
     ctx: await createTRPCContext(ctx),
     transformer: superjson,
   });
-  await ssg.subject.get.prefetch({ slug, take: BASE_TAKE });
+  await ssg.subject.get.prefetch({ slug, take: BASE_TAKE, skip: BASE_SKIP, });
 
   return {
     props: {

@@ -19,6 +19,27 @@ export const getSubject = async ({
     },
   });
 };
+/*
+  const subject = await prisma.subject.findFirst({
+    where: { slug },
+    include: {
+      _count: {
+        select: { challenges: true },
+      },
+      challenges: { take, skip, include: { restrictions: true } },
+    },
+  });
+  if (!subject) return undefined;  
+  const challengeSet = new Set<{
+    index: number;
+    challenge: (typeof subject.challenges)[number];
+  }>();
+  subject.challenges.forEach((challenge, i) =>
+    challengeSet.add({
+      index: i + (skip || 0),
+      challenge: challenge,
+    })
+  );*/
 /*  const challenges = await prisma.challenge.findMany({
     where: { Subject: { slug } },
     take: take + 1,
