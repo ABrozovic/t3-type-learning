@@ -31,7 +31,7 @@ export default function Pagination({
       return pages;
     }
 
-    const PAGES_TO_DISPLAY = 3;
+    const PAGES_TO_DISPLAY = 10;
     const [LOWER_BOUNDARY, UPPER_BOUNDARY] =
       PAGES_TO_DISPLAY % 2 === 0
         ? [PAGES_TO_DISPLAY / 2, PAGES_TO_DISPLAY / 2 + 1]

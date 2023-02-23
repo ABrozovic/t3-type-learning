@@ -5,7 +5,7 @@ import { constrainedEditor } from "constrained-editor-plugin";
 import type { editor } from "monaco-editor";
 import type { GetServerSidePropsContext } from "next";
 import { type NextPage } from "next";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Confetti from "react-confetti";
 import superjson from "superjson";
 import useElementSize from "../components/common/hooks/use-element-size";
@@ -14,6 +14,7 @@ import { createTRPCContext } from "../server/api/trpc";
 import { api } from "../utils/api";
 import { handleVoidPromise } from "../utils/handle-void-promises";
 import { loadStaticDts } from "../utils/load-dts";
+import { shouldPrefetchNextBatch } from "../utils/pagination-helper";
 import Pagination from "./example";
 export type RangeRestriction = {
   range: [number, number, number, number];
@@ -45,42 +46,75 @@ const Home: NextPage = () => {
     },
     {
       keepPreviousData: true,
-      select: (data) => ({
-        ...data,
-        challenges: data?.challenges.map((challenge, index) => ({
-          index: index + BASE_SKIP,
-          challenge: challenge,
-        })),
-      }),
     }
-  );    
+  );
   const updateData = async (page: number) => {
-    setCurrentChallenge(page - 1);
-    if (page % BASE_TAKE > BASE_TAKE - 2) {
-      skipRef.current = takeRef.current;
+    const [prefetch, batch] = shouldPrefetchNextBatch(
+      data?.challenges,
+      data?._count?.challenges,
+      currentChallenge,
+      page,
+      2,
+      BASE_TAKE
+    );
+
+    if (prefetch) {
       const newData = await utils.subject.get.fetch({
         slug: "basic-types",
-        skip: skipRef.current,
+        skip: takeRef.current * batch,
         take: takeRef.current,
       });
-      if (!newData || !data) return;
-      // utils.subject.get.setData(
-      //   {
-      //     slug: "basic-types",
-      //     take: BASE_TAKE,
-      //   },
-      //   {
-      //     _count: newData._count,
-      //     challenges: [...data.challenges, ...newData.challenges],
-      //     createdAt: data.createdAt,
-      //     id: data.id,
-      //     name: data.name,
-      //     slug: data.slug,
-      //     updatedAt: data.updatedAt,
-      //   }
-      // );
+      skipRef.current = takeRef.current * batch;
+      if (!newData || !data || !data.challenges) return;
+
+      utils.subject.get.setData(
+        {
+          slug: "basic-types",
+          skip: BASE_SKIP,
+          take: takeRef.current,
+        },
+        {
+          ...newData,
+          _count: newData._count,
+          challenges: [...data.challenges, ...newData.challenges],
+        }
+      );
     }
+    /*[...data.challenges, ...newData.challenges.map((challenge, index) => ({
+            index: index + BASE_SKIP,
+            challenge: challenge,
+          }))]*/
+    // setCurrentChallenge(page - 1);
+    // if (page % BASE_TAKE > BASE_TAKE - 2) {
+    //   skipRef.current = takeRef.current;
+    //   const newData = await utils.subject.get.fetch({
+    //     slug: "basic-types",
+    //     skip: skipRef.current,
+    //     take: takeRef.current,
+    //   });
+    //   if (!newData || !data) return;
+    // utils.subject.get.setData(
+    //   {
+    //     slug: "basic-types",
+    //     take: BASE_TAKE,
+    //   },
+    //   {
+    //     _count: newData._count,
+    //     challenges: [...data.challenges, ...newData.challenges],
+    //     createdAt: data.createdAt,
+    //     id: data.id,
+    //     name: data.name,
+    //     slug: data.slug,
+    //     updatedAt: data.updatedAt,
+    //   }
+    // );
+    // }
+
+    setCurrentChallenge(page - 1);
   };
+  useEffect(() => {
+    console.log(data?.challenges);
+  }, [data?.challenges]);
 
   async function handleEditorWillMount(monaco: Monaco) {
     monaco.languages.typescript.javascriptDefaults.setCompilerOptions({
@@ -117,7 +151,11 @@ const Home: NextPage = () => {
 
     const model = editor.getModel();
     model?.setEOL(monaco.editor.EndOfLineSequence.LF);
-    if (!data?.challenges || data?.challenges[currentChallenge]?.challenge.restrictions?.length || 0 > 0) {
+    if (
+      !data?.challenges ||
+      data?.challenges[currentChallenge]?.challenge.restrictions?.length ||
+      0 > 0
+    ) {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
       const constrainedInstance = constrainedEditor(monaco);
       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
@@ -125,25 +163,26 @@ const Home: NextPage = () => {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
       constrainedInstance.addRestrictionsTo(
         model,
-        !data?.challenges ||  data?.challenges[currentChallenge]?.challenge.restrictions.map(
-          ({
-            initialRow,
-            initialColumn,
-            finalRow,
-            finalColumn,
-            allowMultiline,
-            label,
-          }) =>
+        !data?.challenges ||
+          data?.challenges[currentChallenge]?.challenge.restrictions.map(
             ({
-              range: [initialRow, initialColumn, finalRow, finalColumn],
-              label,
+              initialRow,
+              initialColumn,
+              finalRow,
+              finalColumn,
               allowMultiline,
-            } as RangeRestriction)
-        )
+              label,
+            }) =>
+              ({
+                range: [initialRow, initialColumn, finalRow, finalColumn],
+                label,
+                allowMultiline,
+              } as RangeRestriction)
+          )
       );
     }
   }
-  if(!data || !data.challenges) return null;
+  if (!data || !data.challenges) return null;
   return (
     <>
       <div className="h-full  w-full bg-slate-300 p-24 ">
@@ -159,7 +198,12 @@ const Home: NextPage = () => {
               onValidate={handleEditorValidation}
               theme="vs-dark"
               height={"20rem"}
-              value={data.challenges[currentChallenge]?.challenge.problem}
+              // value={data.challenges[currentChallenge]?.challenge.problem}
+              value={
+                data.challenges.find(
+                  (challenge) => challenge.index === currentChallenge
+                )?.challenge.problem
+              }
               defaultLanguage="typescript"
               onMount={handleEditorDidMount}
               beforeMount={handleVoidPromise(handleEditorWillMount)}
@@ -234,7 +278,7 @@ export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
     ctx: await createTRPCContext(ctx),
     transformer: superjson,
   });
-  await ssg.subject.get.prefetch({ slug, take: BASE_TAKE, skip: BASE_SKIP, });
+  await ssg.subject.get.prefetch({ slug, take: BASE_TAKE, skip: BASE_SKIP });
 
   return {
     props: {
