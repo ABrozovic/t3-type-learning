@@ -7,16 +7,18 @@ import { useMemo, useRef, useState } from "react";
 import PageNumber from "../components/page-number";
 
 type PaginationProps = {
+  defaultPage?: number;
   numberOfPages: number | undefined;
   onPageChange: (pageNumber: number) => void;
 };
 
 export default function Pagination({
+  defaultPage = 1,
   numberOfPages = 1,
   onPageChange,
 }: PaginationProps) {
   const numOfPages = useRef(Array(numberOfPages).fill(0));
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(defaultPage);
   function handleSelectPage(page: number): void {
     handlePageChange(page);
     setCurrentPage(page);

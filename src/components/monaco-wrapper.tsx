@@ -1,9 +1,11 @@
 import type { Monaco } from "@monaco-editor/react";
 import Editor from "@monaco-editor/react";
+import clsx from "clsx";
 import { constrainedEditor } from "constrained-editor-plugin";
 import type { editor } from "monaco-editor";
 import { useState } from "react";
 import Confetti from "react-confetti";
+import type { RangeRestriction } from "../pages";
 import Pagination from "../pages/example";
 import type { SubjectWithIndexedChallenges } from "../server/api/routers/subjects/get-subject";
 import { handleVoidPromise } from "../utils/handle-void-promises";
@@ -15,6 +17,7 @@ export type MonacoWrapperProps = {
   currentChallenge: number;
   onPageChanged: (page: number) => void;
 };
+type ChallengeStatus = "UNSOLVED" | "CHEERING" | "GREEN" | "SOLVED";
 
 const MonacoWrapper = ({
   subject,
@@ -22,13 +25,31 @@ const MonacoWrapper = ({
   onPageChanged,
 }: MonacoWrapperProps) => {
   const [divRef, { width, height }] = useElementSize();
-  const [cheer, setCheer] = useState(false);
-  const [solved, setSolved] = useState<boolean[]>(
-    Array.from(Array(subject._count.challenges)).fill(false)
+  const [status, setStatus] = useState<
+    { index: number; status: ChallengeStatus }[]
+  >(
+    Array.from(Array(subject._count.challenges))
+      .fill(0)
+      .map((_, i) => ({ index: i, status: "UNSOLVED" }))
   );
+  const isIndexInArray = <T extends { index: number }>(
+    array: T[],
+    index: number
+  ) => {
+    return array.find((item) => item.index === index);
+  };
 
   function handleEditorValidation(markers: editor.IMarker[]) {
-    !solved && markers.length === 0 && setCheer(true);
+    const item = isIndexInArray(status, currentChallenge);
+    if (item?.status === "UNSOLVED" && markers.length === 0) {
+      setStatus(
+        status.map((status) => {
+          if (status.index === currentChallenge)
+            return { ...status, status: "CHEERING" };
+          return status;
+        })
+      );
+    }
   }
   async function handleEditorWillMount(monaco: Monaco) {
     SetTypescriptDefaults(monaco);
@@ -43,63 +64,103 @@ const MonacoWrapper = ({
         enabled: false,
       },
       lineNumbers: "on",
-      glyphMargin: false,
-      folding: false,
+      glyphMargin: true,
+      folding: true,
       lineDecorationsWidth: 0,
       lineNumbersMinChars: 0,
     });
 
-    if (subject.challenges[currentChallenge]?.restrictions?.length || 0 > 0) {
+    if (
+      subject.challenges.find(
+        (challenge) => challenge.index === currentChallenge
+      )?.restrictions?.length ||
+      0 > 0
+    ) {
       SetConstraints(
         monaco,
         editor,
-        subject?.challenges[currentChallenge]?.restrictions
+        subject?.challenges.find(
+          (challenge) => challenge.index === currentChallenge
+        )?.restrictions
       );
     }
   }
-  if (!subject) return;
+  const handlePageChange = (page: number) => {
+    const item = isIndexInArray(status, currentChallenge);
+    if (item?.status !== "UNSOLVED") {
+      setStatus(
+        status.map((status) => {
+          if (status.index === currentChallenge)
+            return { ...status, status: "SOLVED" };
+          return status;
+        })
+      );
+    }
+    onPageChanged(page);
+  };
+  if (!subject) return null;
   return (
     <>
       <div className="h-full  w-full bg-slate-300 p-24 ">
         <div className="mx-auto max-w-screen-xl">
           <div
-            className={`hover:animate-rainbow relative rounded-xl p-7  ${
-              solved ? "bg-green-800" : "bg-slate-900"
-            } transition-all duration-300`}
+            className={clsx(
+              `hover:animate-rainbow relative rounded-xl p-7 transition-all duration-300 `,
+              {
+                "animate-border bg-gradient-to-tr from-slate-900  to-green-700 bg-[length:600%_600%]":
+                  isIndexInArray(status, currentChallenge)?.status === "GREEN",
+                "bg-green-800":
+                  isIndexInArray(status, currentChallenge)?.status === "SOLVED",
+                "bg-slate-900":
+                  isIndexInArray(status, currentChallenge)?.status !== "SOLVED",
+              }
+            )}
             ref={divRef}
           >
             <Editor
+              key={currentChallenge}
               onValidate={handleEditorValidation}
               theme="vs-dark"
               height={"20rem"}
-              value={subject.challenges[currentChallenge]?.problem}
+              value={
+                subject.challenges.find(
+                  (challenge) => challenge.index === currentChallenge
+                )?.problem
+              }
               defaultLanguage="typescript"
               onMount={handleEditorDidMount}
               beforeMount={handleVoidPromise(handleEditorWillMount)}
             />
             <Pagination
+              defaultPage={currentChallenge === 0 ? 1 : currentChallenge}
               numberOfPages={subject._count.challenges}
-              onPageChange={onPageChanged}
+              onPageChange={handlePageChange}
             />
-            <Confetti
-              confettiSource={{ x: -15, y: height, w: 5, h: -20 }}
-              run={cheer}
-              initialVelocityY={30}
-              height={height}
-              width={width}
-              recycle={false}
-              wind={0.3}
-              onConfettiComplete={(confetti) => {
-                setSolved((solved) => [
-                  ...solved,
-                  (solved[currentChallenge] = true),
-                ]);
-                setCheer(false);
-                confetti?.reset();
-              }}
-              drawShape={drawStars}
-              colors={GOLD_COLORS}
-            />
+            {isIndexInArray(status, currentChallenge)?.status ===
+              "CHEERING" && (
+              <Confetti
+                confettiSource={{ x: -15, y: height, w: 5, h: -20 }}
+                initialVelocityY={30}
+                height={height}
+                width={width}
+                recycle={false}
+                wind={0.3}
+                onConfettiComplete={(confetti) => {
+                  const item = isIndexInArray(status, currentChallenge);
+                  if (item)
+                    setStatus(
+                      status.map((status) => {
+                        if (status.index === currentChallenge)
+                          return { ...status, status: "GREEN" };
+                        return status;
+                      })
+                    );
+                  confetti?.reset();
+                }}
+                drawShape={drawStars}
+                colors={GOLD_COLORS}
+              />
+            )}
           </div>
         </div>
       </div>
@@ -121,7 +182,24 @@ function SetConstraints(
   // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
   constrainedInstance.initializeIn(editor);
   // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-  constrainedInstance.addRestrictionsTo(model, restrictions);
+  constrainedInstance.addRestrictionsTo(
+    model,
+    restrictions?.map(
+      ({
+        initialRow,
+        initialColumn,
+        finalRow,
+        finalColumn,
+        allowMultiline,
+        label,
+      }) =>
+        ({
+          range: [initialRow, initialColumn, finalRow, finalColumn],
+          label,
+          allowMultiline,
+        } as RangeRestriction)
+    )
+  );
 }
 
 function SetTypescriptDefaults(monaco: Monaco) {

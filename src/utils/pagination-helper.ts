@@ -54,13 +54,13 @@ export const shouldPrefetchNextBatch = <T extends { index: number }>(
   index: number,
   nextIndex: number,
   threshold: number,
-  batchSize: number
+  batchSize: string | undefined
 ): [boolean, number] => {
   // Return false if itemList or itemCount is undefined, or nextIndex is greater than itemCount.
   if (!itemList || !itemCount || nextIndex > itemCount) {
     return [false, 0];
   }
-
+  const intBatchSize = parseInt(batchSize || "0");
   // Calculate the difference and direction between the current index and the next index.
   const difference = nextIndex - index;
   const direction = Math.sign(difference);
@@ -68,33 +68,31 @@ export const shouldPrefetchNextBatch = <T extends { index: number }>(
   // Clamp the index of the item to prefetch to be within the list bounds.
   const clampedIndex = Math.min(
     Math.max(nextIndex + direction * (threshold + 1), 0),
-    itemCount
+    itemCount - 1
   );
 
   // Check if the item to prefetch is close to the start or end of the list.
   if (
-    nextIndex - 1 < threshold ||
-    nextIndex - 1 > itemList.length - 1 - threshold
+    nextIndex > 3 &&
+    (nextIndex - 1 < threshold ||
+      nextIndex - 1 > itemList.length - 1 - threshold)
   ) {
+    // Check if the current batch needs to be loaded, and return its index.
+    if (!itemList.some((item) => item.index === nextIndex - 1)) {
+      const batchIndex = Math.floor((nextIndex - 1) / intBatchSize) + 1;
+      return [true, batchIndex - 1];
+    }
     // Check if the item to prefetch is already loaded.
     if (itemList.some((item) => item.index === clampedIndex)) {
       return [false, 0];
     }
-
-    // Check if the current batch needs to be loaded, and return its index.
-    if (!itemList.some((item) => item.index === nextIndex)) {
-      const batchIndex = Math.floor((nextIndex - 1) / batchSize);
-      return [true, batchIndex];
-    }
-
     // Return the index of the next batch to load.
-    const batchIndex = Math.floor((nextIndex - 1) / batchSize) + 1;
+    const batchIndex = Math.floor((nextIndex - 1) / intBatchSize) + 1;
     return [true, batchIndex];
   }
-
   // Check if the current batch needs to be loaded, and return its index.
   if (!itemList.some((item) => item.index === nextIndex)) {
-    const batchIndex = Math.floor((nextIndex - 1) / batchSize);
+    const batchIndex = Math.floor((nextIndex - 1) / intBatchSize);
     return [true, batchIndex];
   }
 
