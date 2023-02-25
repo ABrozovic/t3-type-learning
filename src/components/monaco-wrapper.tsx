@@ -16,6 +16,8 @@ export type MonacoWrapperProps = {
   subject: SubjectWithIndexedChallenges;
   currentChallenge: number;
   onPageChanged: (page: number) => void;
+  onValidate: (errors: number) => void;
+  onConfettiComplete: () => void;
 };
 type ChallengeStatus = "UNSOLVED" | "CHEERING" | "GREEN" | "SOLVED";
 
@@ -23,6 +25,8 @@ const MonacoWrapper = ({
   subject,
   currentChallenge,
   onPageChanged,
+  onValidate,
+  onConfettiComplete
 }: MonacoWrapperProps) => {
   const [divRef, { width, height }] = useElementSize();
   const [status, setStatus] = useState<
@@ -40,16 +44,7 @@ const MonacoWrapper = ({
   };
 
   function handleEditorValidation(markers: editor.IMarker[]) {
-    const item = isIndexInArray(status, currentChallenge);
-    if (item?.status === "UNSOLVED" && markers.length === 0) {
-      setStatus(
-        status.map((status) => {
-          if (status.index === currentChallenge)
-            return { ...status, status: "CHEERING" };
-          return status;
-        })
-      );
-    }
+    onValidate(markers.length);
   }
   async function handleEditorWillMount(monaco: Monaco) {
     SetTypescriptDefaults(monaco);
@@ -86,7 +81,10 @@ const MonacoWrapper = ({
     }
   }
   const handlePageChange = (page: number) => {
-    const item = isIndexInArray(status, currentChallenge);
+    const item = isIndexInArray(
+      subject.challenges,
+      currentChallenge
+    )?.challengeStorage;
     if (item?.status !== "UNSOLVED") {
       setStatus(
         status.map((status) => {
@@ -108,11 +106,14 @@ const MonacoWrapper = ({
               `hover:animate-rainbow relative rounded-xl p-7 transition-all duration-300 `,
               {
                 "animate-border bg-gradient-to-tr from-slate-900  to-green-700 bg-[length:600%_600%]":
-                  isIndexInArray(status, currentChallenge)?.status === "GREEN",
+                isIndexInArray(subject.challenges, currentChallenge)
+                ?.challengeStorage.status === "GREEN",
                 "bg-green-800":
-                  isIndexInArray(status, currentChallenge)?.status === "SOLVED",
+                isIndexInArray(subject.challenges, currentChallenge)
+                ?.challengeStorage.status === "SOLVED",
                 "bg-slate-900":
-                  isIndexInArray(status, currentChallenge)?.status !== "SOLVED",
+                isIndexInArray(subject.challenges, currentChallenge)
+                ?.challengeStorage.status !== "SOLVED",
               }
             )}
             ref={divRef}
@@ -136,8 +137,8 @@ const MonacoWrapper = ({
               numberOfPages={subject._count.challenges}
               onPageChange={handlePageChange}
             />
-            {isIndexInArray(status, currentChallenge)?.status ===
-              "CHEERING" && (
+            {isIndexInArray(subject.challenges, currentChallenge)
+              ?.challengeStorage.status === "CHEERING" && (
               <Confetti
                 confettiSource={{ x: -15, y: height, w: 5, h: -20 }}
                 initialVelocityY={30}
@@ -146,15 +147,7 @@ const MonacoWrapper = ({
                 recycle={false}
                 wind={0.3}
                 onConfettiComplete={(confetti) => {
-                  const item = isIndexInArray(status, currentChallenge);
-                  if (item)
-                    setStatus(
-                      status.map((status) => {
-                        if (status.index === currentChallenge)
-                          return { ...status, status: "GREEN" };
-                        return status;
-                      })
-                    );
+                  onConfettiComplete();
                   confetti?.reset();
                 }}
                 drawShape={drawStars}

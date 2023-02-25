@@ -15,9 +15,40 @@ export const getSubjectSchema = z.object({
 });
 export type GetSubject = z.infer<typeof getSubjectSchema>;
 
+export const challengeStorage = z.object({
+  status: z
+    .union([
+      z.literal("UNSOLVED"),
+      z.literal("CHEERING"),
+      z.literal("GREEN"),
+      z.literal("SOLVED"),
+    ])
+    .default("UNSOLVED"),
+  userSolution: z.string().default(""),
+});
+
 export type SubjectWithIndexedChallenges = NonNullable<
   RouterOutputs["subject"]["get"]
 >;
+// export type SubjectWithIndexedChallenges = {
+//   challenges: {
+//     id: string;
+//     problem: string;
+//     solution: string;
+//     subjectId: string | null;
+//     restrictions: ChallengeRestriction[];
+//     challengeStorage: z.infer<typeof challengeStorage>;
+//     index: number;
+//   }[];
+//   id: string;
+//   slug: string;
+//   name: string;
+//   createdAt: Date;
+//   updatedAt: Date;
+//   _count: {
+//     challenges: number;
+//   };
+// };
 export const getSubject = async ({
   input,
   prisma,
@@ -47,6 +78,7 @@ export const getSubject = async ({
     challenges: subject.challenges.map((challenge, index) => ({
       index: index + skip,
       ...challenge,
+      challengeStorage: challengeStorage.parse({}),
     })),
   };
 };

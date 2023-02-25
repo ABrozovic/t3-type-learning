@@ -5,8 +5,11 @@ import superjson from "superjson";
 import useSlug from "../../components/common/hooks/use-slug";
 import MonacoWrapper from "../../components/monaco-wrapper";
 import { appRouter } from "../../server/api/root";
+import type { SubjectWithIndexedChallenges } from "../../server/api/routers/subjects/get-subject";
+import { challengeStorage } from "../../server/api/routers/subjects/get-subject";
 import { createTRPCContext } from "../../server/api/trpc";
 import { api } from "../../utils/api";
+import { findIndexInArray } from "../../utils/array-utils";
 import { handleVoidPromise } from "../../utils/handle-void-promises";
 import { shouldPrefetchNextBatch } from "../../utils/pagination-helper";
 type SubjectQuery = {
@@ -32,11 +35,25 @@ const Subject = () => {
     },
     {
       enabled: !!isReady,
+      refetchOnMount: false,
       refetchOnWindowFocus: false,
-      refetchInterval: 10000,
       refetchOnReconnect: false,
     }
   );
+  if (!isReady || !data) return null;
+  const setData = (challenges: SubjectWithIndexedChallenges["challenges"]) => {
+    utils.subject.get.setData(
+      {
+        slug: "basic-types",
+        skip: `${parseInt(skip || "0")}`,
+        take: `${parseInt(take || "0")}`,
+      },
+      {
+        ...data,
+        challenges,
+      }
+    );
+  };
   const handlePageChange = async (page: number) => {
     const [prefetch, batch] = shouldPrefetchNextBatch(
       data?.challenges,
@@ -88,15 +105,51 @@ const Subject = () => {
 
     setCurrentChallenge(page - 1);
   };
+  const handleValidate = (errors: number) => {
+    if (errors > 0 || !data) return;
+    const { updatedChallenges, challengeToUpdate } = getNewArrayAndElement(
+      data,
+      currentChallenge
+    );
 
-  if (!isReady || !data) return null;
+    if (challengeToUpdate?.challengeStorage.status === "UNSOLVED") {
+      updateChallengeStorage(
+        challengeToUpdate,
+        updatedChallenges,
+        currentChallenge,
+        "CHEERING"
+      );
+
+      setData(updatedChallenges);
+    }
+  };
+
+  const handleConfetiComplete = () => {
+    const { updatedChallenges, challengeToUpdate } = getNewArrayAndElement(
+      data,
+      currentChallenge
+    );
+    if (!challengeToUpdate) return;
+    updateChallengeStorage(
+      challengeToUpdate,
+      updatedChallenges,
+      currentChallenge,
+      "GREEN"
+    );
+
+    setData(updatedChallenges);
+  };
+
   return (
     <>
       <MonacoWrapper
+        onValidate={handleValidate}
         subject={data}
         currentChallenge={currentChallenge}
         onPageChanged={handleVoidPromise(handlePageChange)}
+        onConfettiComplete={handleConfetiComplete}
       />
+      <p>{data.challenges[0]?.challengeStorage.status}</p>
     </>
   );
 };
@@ -123,3 +176,35 @@ export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
 };
 
 export default Subject;
+function getNewArrayAndElement(
+  data: SubjectWithIndexedChallenges,
+  currentChallenge: number
+) {
+  const updatedChallenges = [...data.challenges];
+  const challengeToUpdate =
+    updatedChallenges[findIndexInArray(updatedChallenges, currentChallenge)];
+  return { challengeToUpdate, updatedChallenges };
+}
+
+function updateChallengeStorage(
+  challengeToUpdate: SubjectWithIndexedChallenges["challenges"][number],
+  updatedChallenges: SubjectWithIndexedChallenges["challenges"],
+  currentChallenge: number,
+  challengeStatus?:
+    | SubjectWithIndexedChallenges["challenges"][number]["challengeStorage"]["status"]
+    | null,
+  challengeSolution?:
+    | SubjectWithIndexedChallenges["challenges"][number]["challengeStorage"]["userSolution"]
+    | null
+) {
+  const updatedChallenge = {
+    ...challengeToUpdate,
+    challengeStorage: challengeStorage.parse({
+      ...challengeToUpdate.challengeStorage,
+      status: challengeStatus ?? challengeToUpdate.challengeStorage.status,
+      userSolution:
+        challengeSolution ?? challengeToUpdate.challengeStorage.userSolution,
+    }),
+  };
+  updatedChallenges[currentChallenge] = updatedChallenge;
+}
