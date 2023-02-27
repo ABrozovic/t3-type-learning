@@ -3,7 +3,7 @@ import type {
   GetServerSidePropsContext,
   InferGetServerSidePropsType,
 } from "next";
-import { useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import superjson from "superjson";
 import useSlug from "../../components/common/hooks/use-slug";
 import MonacoWrapper from "../../components/monaco-wrapper";
@@ -34,6 +34,22 @@ const Subject = ({
   const { isReady, addQuery } = useSlug(getSubjectSchema);
   const [currentChallenge, setCurrentChallenge] = useState(defaultPage);
   const utils = api.useContext();
+  const updateRef = useRef(false);
+
+  const test = useMemo(() => {
+    const data = utils.subject.get.getData({
+      slug,
+      skip: `${defaultSkip}`,
+      take: `${defaultTake}`,
+    });
+    const updatedChallenges = data ? [...data.challenges] : [];
+    const challengeToUpdate =
+      updatedChallenges[findIndexInArray(updatedChallenges, currentChallenge)];
+
+    return { updatedChallenges, challengeToUpdate };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentChallenge, updateRef.current]);
+
   const { data } = api.subject.get.useQuery(
     {
       slug: slug,
@@ -42,7 +58,6 @@ const Subject = ({
     },
     {
       enabled: isReady,
-      keepPreviousData: true,
       refetchOnMount: false,
       refetchOnWindowFocus: false,
       refetchOnReconnect: false,
@@ -53,7 +68,7 @@ const Subject = ({
   const setData = (challenges: SubjectWithIndexedChallenges["challenges"]) => {
     utils.subject.get.setData(
       {
-        slug: "basic-types",
+        slug,
         skip: `${defaultSkip}`,
         take: `${defaultTake}`,
       },
@@ -76,7 +91,7 @@ const Subject = ({
 
     if (prefetch) {
       const newData = await utils.subject.get.fetch({
-        slug: "basic-types",
+        slug,
         skip: `${defaultTake * batch}`,
         take: `${defaultTake}`,
       });
@@ -102,7 +117,7 @@ const Subject = ({
 
       utils.subject.get.setData(
         {
-          slug: "basic-types",
+          slug,
           skip: `${defaultSkip}`,
           take: `${defaultTake}`,
         },
@@ -133,12 +148,9 @@ const Subject = ({
     setCurrentChallenge(page);
   };
   const handleValidate = (errors: number) => {
+    updateRef.current = !updateRef.current;
     if (errors > 0 || !data) return;
-    const { updatedChallenges, challengeToUpdate } = getNewArrayAndElement(
-      data,
-      currentChallenge
-    );
-
+    const { updatedChallenges, challengeToUpdate } = test;
     if (challengeToUpdate?.challengeStorage.status === "UNSOLVED") {
       updateChallengeStorage(
         challengeToUpdate,
@@ -152,10 +164,7 @@ const Subject = ({
   };
 
   const handleConfetiComplete = () => {
-    const { updatedChallenges, challengeToUpdate } = getNewArrayAndElement(
-      data,
-      currentChallenge
-    );
+    const { updatedChallenges, challengeToUpdate } = test;
     if (!challengeToUpdate) return;
     updateChallengeStorage(
       challengeToUpdate,
@@ -169,15 +178,20 @@ const Subject = ({
 
   const handleTextUpdate = (text: string) => {
     const { updatedChallenges, challengeToUpdate } = getNewArrayAndElement(
-      data,
+      utils.subject.get.getData({
+        slug,
+        skip: `${defaultSkip}`,
+        take: `${defaultTake}`,
+      }),
       currentChallenge
     );
     if (!challengeToUpdate) return;
+
     updateChallengeStorage(
       challengeToUpdate,
       updatedChallenges,
       currentChallenge,
-      "CHEERING",
+      challengeToUpdate.challengeStorage.status,
       text
     );
 
@@ -229,10 +243,10 @@ export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
 
 export default Subject;
 function getNewArrayAndElement(
-  data: SubjectWithIndexedChallenges,
+  data: SubjectWithIndexedChallenges | undefined,
   currentChallenge: number
 ) {
-  const updatedChallenges = [...data.challenges];
+  const updatedChallenges = data ? [...data.challenges] : [];
   const challengeToUpdate =
     updatedChallenges[findIndexInArray(updatedChallenges, currentChallenge)];
 
@@ -247,7 +261,7 @@ function updateChallengeStorage<
   currentChallenge: number,
   challengeStatus: T[number]["challengeStorage"]["status"],
   challengeSolution?: string | undefined
-) {  
+) {
   const updatedChallenge = {
     ...challengeToUpdate,
     problem: challengeSolution ? challengeSolution : challengeToUpdate.problem,

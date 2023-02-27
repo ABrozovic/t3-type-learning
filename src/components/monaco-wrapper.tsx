@@ -112,7 +112,7 @@ const MonacoWrapper = ({
               onChange={(value) => setValue(value || "")}
               theme="vs-dark"
               height={"20rem"}
-              value={
+              defaultValue={
                 subject.challenges.find(
                   (challenge) => challenge.index === currentChallenge
                 )?.problem
