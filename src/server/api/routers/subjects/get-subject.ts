@@ -3,12 +3,16 @@ import { z } from "zod";
 import type { RouterOutputs } from "../../../../utils/api";
 
 export const getSubjectSchema = z.object({
-  slug: z.string(),
+  slug: z.string().min(3),
   take: z
     .string()
     .optional()
-    .transform((value) => parseInt(value || "1")),
+    .transform((value) => parseInt(value || "20")),
   skip: z
+    .string()
+    .optional()
+    .transform((value) => parseInt(value || "0")),
+  page: z
     .string()
     .optional()
     .transform((value) => parseInt(value || "0")),
@@ -30,25 +34,6 @@ export const challengeStorage = z.object({
 export type SubjectWithIndexedChallenges = NonNullable<
   RouterOutputs["subject"]["get"]
 >;
-// export type SubjectWithIndexedChallenges = {
-//   challenges: {
-//     id: string;
-//     problem: string;
-//     solution: string;
-//     subjectId: string | null;
-//     restrictions: ChallengeRestriction[];
-//     challengeStorage: z.infer<typeof challengeStorage>;
-//     index: number;
-//   }[];
-//   id: string;
-//   slug: string;
-//   name: string;
-//   createdAt: Date;
-//   updatedAt: Date;
-//   _count: {
-//     challenges: number;
-//   };
-// };
 export const getSubject = async ({
   input,
   prisma,
@@ -75,8 +60,9 @@ export const getSubject = async ({
 
   return {
     ...subject,
+    _count: { challenges: subject._count.challenges - 1 },
     challenges: subject.challenges.map((challenge, index) => ({
-      index: index + skip,
+      index: index + (skip === 0 ? 1 : skip),
       ...challenge,
       challengeStorage: challengeStorage.parse({}),
     })),

@@ -54,13 +54,12 @@ export const shouldPrefetchNextBatch = <T extends { index: number }>(
   index: number,
   nextIndex: number,
   threshold: number,
-  batchSize: string | undefined
+  batchSize: number
 ): [boolean, number] => {
   // Return false if itemList or itemCount is undefined, or nextIndex is greater than itemCount.
   if (!itemList || !itemCount || nextIndex > itemCount) {
     return [false, 0];
-  }
-  const intBatchSize = parseInt(batchSize || "0");
+  }  
   // Calculate the difference and direction between the current index and the next index.
   const difference = nextIndex - index;
   const direction = Math.sign(difference);
@@ -79,7 +78,7 @@ export const shouldPrefetchNextBatch = <T extends { index: number }>(
   ) {
     // Check if the current batch needs to be loaded, and return its index.
     if (!itemList.some((item) => item.index === nextIndex - 1)) {
-      const batchIndex = Math.floor((nextIndex - 1) / intBatchSize) + 1;
+      const batchIndex = Math.floor((nextIndex - 1) / batchSize) + 1;
       return [true, batchIndex - 1];
     }
     // Check if the item to prefetch is already loaded.
@@ -87,12 +86,12 @@ export const shouldPrefetchNextBatch = <T extends { index: number }>(
       return [false, 0];
     }
     // Return the index of the next batch to load.
-    const batchIndex = Math.floor((nextIndex - 1) / intBatchSize) + 1;
+    const batchIndex = Math.floor((nextIndex - 1) / batchSize) + 1;
     return [true, batchIndex];
   }
   // Check if the current batch needs to be loaded, and return its index.
   if (!itemList.some((item) => item.index === nextIndex)) {
-    const batchIndex = Math.floor((nextIndex - 1) / intBatchSize);
+    const batchIndex = Math.floor((nextIndex - 1) / batchSize);
     return [true, batchIndex];
   }
 
