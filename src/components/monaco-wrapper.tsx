@@ -19,7 +19,7 @@ export type MonacoWrapperProps = {
   onValidate: (errors: number) => void;
   onConfettiComplete: () => void;
 };
-type ChallengeStatus = "UNSOLVED" | "CHEERING" | "GREEN" | "SOLVED";
+
 
 const MonacoWrapper = ({
   subject,
@@ -29,13 +29,7 @@ const MonacoWrapper = ({
   onConfettiComplete
 }: MonacoWrapperProps) => {
   const [divRef, { width, height }] = useElementSize();
-  const [status, setStatus] = useState<
-    { index: number; status: ChallengeStatus }[]
-  >(
-    Array.from(Array(subject._count.challenges))
-      .fill(0)
-      .map((_, i) => ({ index: i, status: "UNSOLVED" }))
-  );
+
   const isIndexInArray = <T extends { index: number }>(
     array: T[],
     index: number
@@ -81,19 +75,7 @@ const MonacoWrapper = ({
     }
   }
   const handlePageChange = (page: number) => {
-    const item = isIndexInArray(
-      subject.challenges,
-      currentChallenge
-    )?.challengeStorage;
-    if (item?.status !== "UNSOLVED") {
-      setStatus(
-        status.map((status) => {
-          if (status.index === currentChallenge)
-            return { ...status, status: "SOLVED" };
-          return status;
-        })
-      );
-    }
+
     onPageChanged(page);
   };
   if (!subject) return null;

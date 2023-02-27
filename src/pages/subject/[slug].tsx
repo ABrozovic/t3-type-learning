@@ -1,12 +1,18 @@
 import { createProxySSGHelpers } from "@trpc/react-query/ssg";
-import type { GetServerSidePropsContext } from "next";
+import type {
+  GetServerSidePropsContext,
+  InferGetServerSidePropsType,
+} from "next";
 import { useState } from "react";
 import superjson from "superjson";
 import useSlug from "../../components/common/hooks/use-slug";
 import MonacoWrapper from "../../components/monaco-wrapper";
 import { appRouter } from "../../server/api/root";
 import type { SubjectWithIndexedChallenges } from "../../server/api/routers/subjects/get-subject";
-import { challengeStorage } from "../../server/api/routers/subjects/get-subject";
+import {
+  challengeStorage,
+  getSubjectSchema,
+} from "../../server/api/routers/subjects/get-subject";
 import { createTRPCContext } from "../../server/api/trpc";
 import { api } from "../../utils/api";
 import { findIndexInArray } from "../../utils/array-utils";
@@ -16,37 +22,41 @@ type SubjectQuery = {
   slug: string;
   skip: string;
   take: string;
+  page: string;
 };
 
-const Subject = () => {
+const Subject = ({
+  defaultPage = 0,
+}: InferGetServerSidePropsType<typeof getServerSideProps>) => {
   const {
     isReady,
-    data: { slug, skip, take },
-  } = useSlug<SubjectQuery>();
-  const [currentChallenge, setCurrentChallenge] = useState(
-    parseInt(skip || "0")
-  );
+    addQuery,
+    query: { slug = "", skip = 0, take = 5, page = 0 },
+  } = useSlug(getSubjectSchema);
+  const [currentChallenge, setCurrentChallenge] = useState(defaultPage);
   const utils = api.useContext();
   const { data } = api.subject.get.useQuery(
     {
-      slug: slug || "",
-      take: take || "0",
-      skip: skip || "0",
+      slug: slug,
+      skip: `${skip}`,
+      take: `${take > page ? take : page}`,
     },
     {
-      enabled: !!isReady,
+      enabled: isReady,
+      keepPreviousData: true,
       refetchOnMount: false,
       refetchOnWindowFocus: false,
       refetchOnReconnect: false,
     }
   );
+
   if (!isReady || !data) return null;
   const setData = (challenges: SubjectWithIndexedChallenges["challenges"]) => {
     utils.subject.get.setData(
       {
         slug: "basic-types",
-        skip: `${parseInt(skip || "0")}`,
-        take: `${parseInt(take || "0")}`,
+        skip: `${skip}`,
+        take: `${take > page ? take : page}`,
       },
       {
         ...data,
@@ -55,6 +65,7 @@ const Subject = () => {
     );
   };
   const handlePageChange = async (page: number) => {
+    await addQuery("page", `${page}`);
     const [prefetch, batch] = shouldPrefetchNextBatch(
       data?.challenges,
       data?._count?.challenges,
@@ -67,8 +78,8 @@ const Subject = () => {
     if (prefetch) {
       const newData = await utils.subject.get.fetch({
         slug: "basic-types",
-        skip: `${parseInt(take || "0") * batch}`,
-        take: `${parseInt(take || "0")}`,
+        skip: `${take * batch}`,
+        take: `${take}`,
       });
 
       if (!newData || !data || !data.challenges) return;
@@ -92,8 +103,8 @@ const Subject = () => {
       utils.subject.get.setData(
         {
           slug: "basic-types",
-          skip: `${parseInt(skip || "0")}`,
-          take: `${parseInt(take || "0")}`,
+          skip: `${skip}`,
+          take: `${take}`,
         },
         {
           ...newData,
@@ -103,7 +114,7 @@ const Subject = () => {
       );
     }
 
-    setCurrentChallenge(page - 1);
+    setCurrentChallenge(page);
   };
   const handleValidate = (errors: number) => {
     if (errors > 0 || !data) return;
@@ -154,23 +165,26 @@ const Subject = () => {
   );
 };
 export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
-  const slug = "basic-types";
   const query = ctx.query as unknown as SubjectQuery;
   const ssg = createProxySSGHelpers({
     router: appRouter,
     ctx: await createTRPCContext(ctx),
     transformer: superjson,
   });
+  const data = getSubjectSchema.safeParse(query);
+  if (!data.success) return { props: {} };
+  const { slug = "", skip = 0, take = 5, page = 0 } = data.data;
   await ssg.subject.get.prefetch({
-    slug: query.slug,
-    take: query.take || "0",
-    skip: query.skip || "0",
+    slug: slug,
+    skip: `${skip}`,
+    take: `${take > page ? take : page}`,
   });
 
   return {
     props: {
       trpcState: ssg.dehydrate(),
       slug,
+      defaultPage: page,
     },
   };
 };
@@ -186,16 +200,14 @@ function getNewArrayAndElement(
   return { challengeToUpdate, updatedChallenges };
 }
 
-function updateChallengeStorage(
-  challengeToUpdate: SubjectWithIndexedChallenges["challenges"][number],
-  updatedChallenges: SubjectWithIndexedChallenges["challenges"],
+function updateChallengeStorage<
+  T extends SubjectWithIndexedChallenges["challenges"]
+>(
+  challengeToUpdate: T[number],
+  updatedChallenges: T,
   currentChallenge: number,
-  challengeStatus?:
-    | SubjectWithIndexedChallenges["challenges"][number]["challengeStorage"]["status"]
-    | null,
-  challengeSolution?:
-    | SubjectWithIndexedChallenges["challenges"][number]["challengeStorage"]["userSolution"]
-    | null
+  challengeStatus?: T[number]["challengeStorage"]["status"] | null,
+  challengeSolution?: T[number]["challengeStorage"]["userSolution"] | null
 ) {
   const updatedChallenge = {
     ...challengeToUpdate,
