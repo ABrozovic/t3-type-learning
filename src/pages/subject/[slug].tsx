@@ -173,7 +173,9 @@ export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
   });
   const data = getSubjectSchema.safeParse(query);
   if (!data.success) return { props: {} };
+
   const { slug = "", skip = 0, take = 5, page = 0 } = data.data;
+
   await ssg.subject.get.prefetch({
     slug: slug,
     skip: `${skip}`,
