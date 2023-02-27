@@ -3,13 +3,14 @@ import Editor from "@monaco-editor/react";
 import clsx from "clsx";
 import { constrainedEditor } from "constrained-editor-plugin";
 import type { editor } from "monaco-editor";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Confetti from "react-confetti";
 import type { RangeRestriction } from "../pages";
 import Pagination from "../pages/example";
 import type { SubjectWithIndexedChallenges } from "../server/api/routers/subjects/get-subject";
 import { handleVoidPromise } from "../utils/handle-void-promises";
 import { loadStaticDts } from "../utils/load-dts";
+import useDebounce from "./common/hooks/use-debounce";
 import useElementSize from "./common/hooks/use-element-size";
 
 export type MonacoWrapperProps = {
@@ -18,18 +19,24 @@ export type MonacoWrapperProps = {
   onPageChanged: (page: number) => void;
   onValidate: (errors: number) => void;
   onConfettiComplete: () => void;
+  onTextChanged: (text: string) => void;
 };
-
 
 const MonacoWrapper = ({
   subject,
   currentChallenge,
   onPageChanged,
   onValidate,
-  onConfettiComplete
+  onConfettiComplete,
+  onTextChanged,
 }: MonacoWrapperProps) => {
   const [divRef, { width, height }] = useElementSize();
-
+  const [value, setValue] = useState("");
+  const debouncer = useDebounce<string>(value, 500);
+  const onTextChangedRef = useRef(onTextChanged);
+  useEffect(() => {
+    onTextChangedRef.current(debouncer);
+  }, [debouncer]);
   const isIndexInArray = <T extends { index: number }>(
     array: T[],
     index: number
@@ -42,7 +49,7 @@ const MonacoWrapper = ({
   }
   async function handleEditorWillMount(monaco: Monaco) {
     SetTypescriptDefaults(monaco);
-    await loadStaticDts(monaco, ["react", "react-dom"]);
+    await loadStaticDts(monaco, ["react", "react-dom", "utils"]);
   }
   function handleEditorDidMount(
     editor: editor.IStandaloneCodeEditor,
@@ -75,7 +82,6 @@ const MonacoWrapper = ({
     }
   }
   const handlePageChange = (page: number) => {
-
     onPageChanged(page);
   };
   if (!subject) return null;
@@ -88,14 +94,14 @@ const MonacoWrapper = ({
               `hover:animate-rainbow relative rounded-xl p-7 transition-all duration-300 `,
               {
                 "animate-border bg-gradient-to-tr from-slate-900  to-green-700 bg-[length:600%_600%]":
-                isIndexInArray(subject.challenges, currentChallenge)
-                ?.challengeStorage.status === "GREEN",
+                  isIndexInArray(subject.challenges, currentChallenge)
+                    ?.challengeStorage.status === "GREEN",
                 "bg-green-800":
-                isIndexInArray(subject.challenges, currentChallenge)
-                ?.challengeStorage.status === "SOLVED",
+                  isIndexInArray(subject.challenges, currentChallenge)
+                    ?.challengeStorage.status === "SOLVED",
                 "bg-slate-900":
-                isIndexInArray(subject.challenges, currentChallenge)
-                ?.challengeStorage.status !== "SOLVED",
+                  isIndexInArray(subject.challenges, currentChallenge)
+                    ?.challengeStorage.status !== "SOLVED",
               }
             )}
             ref={divRef}
@@ -103,6 +109,7 @@ const MonacoWrapper = ({
             <Editor
               key={currentChallenge}
               onValidate={handleEditorValidation}
+              onChange={(value) => setValue(value || "")}
               theme="vs-dark"
               height={"20rem"}
               value={

@@ -26,20 +26,19 @@ type SubjectQuery = {
 };
 
 const Subject = ({
-  defaultPage = 0,
+  defaultPage = 1,
+  defaultSkip = 0,
+  defaultTake = 20,
+  slug = "",
 }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
-  const {
-    isReady,
-    addQuery,
-    query: { slug = "", skip = 0, take = 5, page = 0 },
-  } = useSlug(getSubjectSchema);
+  const { isReady, addQuery } = useSlug(getSubjectSchema);
   const [currentChallenge, setCurrentChallenge] = useState(defaultPage);
   const utils = api.useContext();
   const { data } = api.subject.get.useQuery(
     {
       slug: slug,
-      skip: `${skip}`,
-      take: `${take > page ? take : page}`,
+      skip: `${defaultSkip}`,
+      take: `${defaultTake}`,
     },
     {
       enabled: isReady,
@@ -55,8 +54,8 @@ const Subject = ({
     utils.subject.get.setData(
       {
         slug: "basic-types",
-        skip: `${skip}`,
-        take: `${take > page ? take : page}`,
+        skip: `${defaultSkip}`,
+        take: `${defaultTake}`,
       },
       {
         ...data,
@@ -72,14 +71,14 @@ const Subject = ({
       currentChallenge,
       page,
       2,
-      take
+      defaultTake
     );
 
     if (prefetch) {
       const newData = await utils.subject.get.fetch({
         slug: "basic-types",
-        skip: `${take * batch}`,
-        take: `${take}`,
+        skip: `${defaultTake * batch}`,
+        take: `${defaultTake}`,
       });
 
       if (!newData || !data || !data.challenges) return;
@@ -100,11 +99,12 @@ const Subject = ({
         },
         []
       );
+
       utils.subject.get.setData(
         {
           slug: "basic-types",
-          skip: `${skip}`,
-          take: `${take}`,
+          skip: `${defaultSkip}`,
+          take: `${defaultTake}`,
         },
         {
           ...newData,
@@ -112,6 +112,22 @@ const Subject = ({
           challenges: updatedChallenges,
         }
       );
+    }
+
+    const { updatedChallenges, challengeToUpdate } = getNewArrayAndElement(
+      data,
+      currentChallenge
+    );
+    if (!challengeToUpdate) return;
+    if (challengeToUpdate?.challengeStorage.status !== "UNSOLVED") {
+      updateChallengeStorage(
+        challengeToUpdate,
+        updatedChallenges,
+        currentChallenge,
+        "SOLVED"
+      );
+
+      setData(updatedChallenges);
     }
 
     setCurrentChallenge(page);
@@ -151,9 +167,27 @@ const Subject = ({
     setData(updatedChallenges);
   };
 
+  const handleTextUpdate = (text: string) => {
+    const { updatedChallenges, challengeToUpdate } = getNewArrayAndElement(
+      data,
+      currentChallenge
+    );
+    if (!challengeToUpdate) return;
+    updateChallengeStorage(
+      challengeToUpdate,
+      updatedChallenges,
+      currentChallenge,
+      "CHEERING",
+      text
+    );
+
+    setData(updatedChallenges);
+  };
+
   return (
     <>
       <MonacoWrapper
+        onTextChanged={handleTextUpdate}
         onValidate={handleValidate}
         subject={data}
         currentChallenge={currentChallenge}
@@ -174,12 +208,12 @@ export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
   const data = getSubjectSchema.safeParse(query);
   if (!data.success) return { props: {} };
 
-  const { slug = "", skip = 0, take = 5, page = 0 } = data.data;
-
+  const { slug = "", skip = 0, take = 5, page = 1 } = data.data;
+  const defaultTake = take > page ? take : page;
   await ssg.subject.get.prefetch({
     slug: slug,
     skip: `${skip}`,
-    take: `${take > page ? take : page}`,
+    take: `${defaultTake}`,
   });
 
   return {
@@ -187,6 +221,8 @@ export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
       trpcState: ssg.dehydrate(),
       slug,
       defaultPage: page,
+      defaultTake: defaultTake,
+      defaultSkip: skip,
     },
   };
 };
@@ -199,6 +235,7 @@ function getNewArrayAndElement(
   const updatedChallenges = [...data.challenges];
   const challengeToUpdate =
     updatedChallenges[findIndexInArray(updatedChallenges, currentChallenge)];
+
   return { challengeToUpdate, updatedChallenges };
 }
 
@@ -208,17 +245,17 @@ function updateChallengeStorage<
   challengeToUpdate: T[number],
   updatedChallenges: T,
   currentChallenge: number,
-  challengeStatus?: T[number]["challengeStorage"]["status"] | null,
-  challengeSolution?: T[number]["challengeStorage"]["userSolution"] | null
-) {
+  challengeStatus: T[number]["challengeStorage"]["status"],
+  challengeSolution?: string | undefined
+) {  
   const updatedChallenge = {
     ...challengeToUpdate,
+    problem: challengeSolution ? challengeSolution : challengeToUpdate.problem,
     challengeStorage: challengeStorage.parse({
       ...challengeToUpdate.challengeStorage,
-      status: challengeStatus ?? challengeToUpdate.challengeStorage.status,
-      userSolution:
-        challengeSolution ?? challengeToUpdate.challengeStorage.userSolution,
+      status: challengeStatus,
     }),
   };
-  updatedChallenges[currentChallenge] = updatedChallenge;
+  updatedChallenges[findIndexInArray(updatedChallenges, currentChallenge)] =
+    updatedChallenge;
 }
