@@ -3,160 +3,134 @@ import Editor from "@monaco-editor/react";
 import clsx from "clsx";
 import { constrainedEditor } from "constrained-editor-plugin";
 import type { editor } from "monaco-editor";
-import { useEffect, useRef, useState } from "react";
-import Confetti from "react-confetti";
+import type { ReactNode } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
 import type { RangeRestriction } from "../pages";
-import Pagination from "../pages/example";
-import type { SubjectWithIndexedChallenges } from "../server/api/routers/subjects/get-subject";
 import { handleVoidPromise } from "../utils/handle-void-promises";
 import { loadStaticDts } from "../utils/load-dts";
-import useDebounce from "./common/hooks/use-debounce";
 import useElementSize from "./common/hooks/use-element-size";
 
 export type MonacoWrapperProps = {
-  subject: SubjectWithIndexedChallenges;
-  currentChallenge: number;
-  onPageChanged: (page: number) => void;
-  onValidate: (errors: number) => void;
-  onConfettiComplete: () => void;
-  onTextChanged: (text: string) => void;
+  value?: string;
+  defaultValue?: string;
+  restrictions?: RangeRestriction[];
+  onPageChanged?: (page: number) => void;
+  onValidate?: (errors: number) => void;
+  onConfettiComplete?: () => void;
+  onTextChanged?: (text: string) => void;
+  children?: ReactNode;
 };
 
-const MonacoWrapper = ({
-  subject,
-  currentChallenge,
-  onPageChanged,
-  onValidate,
-  onConfettiComplete,
-  onTextChanged,
-}: MonacoWrapperProps) => {
-  const [divRef, { width, height }] = useElementSize();
-  const [value, setValue] = useState("");
-  const debouncer = useDebounce<string>(value, 500);
-  const onTextChangedRef = useRef(onTextChanged);
-  useEffect(() => {
-    onTextChangedRef.current(debouncer);
-  }, [debouncer]);
-  const isIndexInArray = <T extends { index: number }>(
-    array: T[],
-    index: number
+const MonacoWrapper = forwardRef(
+  (
+    {
+      defaultValue,
+      value,
+      restrictions,
+      onPageChanged,
+      onValidate,
+      onConfettiComplete,
+      onTextChanged,
+      children,
+    }: MonacoWrapperProps,
+    ref
   ) => {
-    return array.find((item) => item.index === index);
-  };
-
-  function handleEditorValidation(markers: editor.IMarker[]) {
-    onValidate(markers.length);
-  }
-  async function handleEditorWillMount(monaco: Monaco) {
-    SetTypescriptDefaults(monaco);
-    await loadStaticDts(monaco, ["react", "react-dom", "utils"]);
-  }
-  function handleEditorDidMount(
-    editor: editor.IStandaloneCodeEditor,
-    monaco: Monaco
-  ) {
-    editor.updateOptions({
-      minimap: {
-        enabled: false,
+    const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
+    const monacoRef = useRef<Monaco | null>(null);
+    const [divRef, { width, height }] = useElementSize();
+    useImperativeHandle(
+      ref,
+      () => {
+        return {
+          getWidth() {
+            return width;
+          },
+          getHeight() {
+            return height;
+          },
+        };
       },
-      lineNumbers: "on",
-      glyphMargin: true,
-      folding: true,
-      lineDecorationsWidth: 0,
-      lineNumbersMinChars: 0,
-    });
-
-    if (
-      subject.challenges.find(
-        (challenge) => challenge.index === currentChallenge
-      )?.restrictions?.length ||
-      0 > 0
-    ) {
-      SetConstraints(
-        monaco,
-        editor,
-        subject?.challenges.find(
-          (challenge) => challenge.index === currentChallenge
-        )?.restrictions
-      );
+      [height, width]
+    );
+    function handleEditorValidation(markers: editor.IMarker[]) {
+      onValidate && onValidate(markers.length);
     }
-  }
-  const handlePageChange = (page: number) => {
-    onPageChanged(page);
-  };
-  if (!subject) return null;
-  return (
-    <>
-      <div className="h-full  w-full bg-slate-300 p-24 ">
-        <div className="mx-auto max-w-screen-xl">
-          <div
-            className={clsx(
-              `hover:animate-rainbow relative rounded-xl p-7 transition-all duration-300 `,
-              {
-                "animate-border bg-gradient-to-tr from-slate-900  to-green-700 bg-[length:600%_600%]":
-                  isIndexInArray(subject.challenges, currentChallenge)
-                    ?.challengeStorage.status === "GREEN",
-                "bg-green-800":
-                  isIndexInArray(subject.challenges, currentChallenge)
-                    ?.challengeStorage.status === "SOLVED",
-                "bg-slate-900":
-                  isIndexInArray(subject.challenges, currentChallenge)
-                    ?.challengeStorage.status !== "SOLVED",
-              }
-            )}
-            ref={divRef}
-          >
-            <Editor
-              key={currentChallenge}
-              onValidate={handleEditorValidation}
-              onChange={(value) => setValue(value || "")}
-              theme="vs-dark"
-              height={"20rem"}
-              defaultValue={
-                subject.challenges.find(
-                  (challenge) => challenge.index === currentChallenge
-                )?.problem
-              }
-              defaultLanguage="typescript"
-              onMount={handleEditorDidMount}
-              beforeMount={handleVoidPromise(handleEditorWillMount)}
-            />
-            <Pagination
-              defaultPage={currentChallenge === 0 ? 1 : currentChallenge}
-              numberOfPages={subject._count.challenges}
-              onPageChange={handlePageChange}
-            />
-            {isIndexInArray(subject.challenges, currentChallenge)
-              ?.challengeStorage.status === "CHEERING" && (
-              <Confetti
-                confettiSource={{ x: -15, y: height, w: 5, h: -20 }}
-                initialVelocityY={30}
-                height={height}
-                width={width}
-                recycle={false}
-                wind={0.3}
-                onConfettiComplete={(confetti) => {
-                  onConfettiComplete();
-                  confetti?.reset();
-                }}
-                drawShape={drawStars}
-                colors={GOLD_COLORS}
-              />
-            )}
+    async function handleEditorWillMount(monaco: Monaco) {
+      SetTypescriptDefaults(monaco);
+      await loadStaticDts(monaco, ["react", "react-dom", "utils"]);
+    }
+    function handleEditorDidMount(
+      editor: editor.IStandaloneCodeEditor,
+      monaco: Monaco
+    ) {
+      editor.updateOptions({
+        minimap: {
+          enabled: false,
+        },
+        lineNumbers: "on",
+        glyphMargin: true,
+        folding: true,
+        lineDecorationsWidth: 0,
+        lineNumbersMinChars: 0,
+      });
+      monacoRef.current = monaco;
+      editorRef.current = editor;
+    }
+    useEffect(() => {
+      if (!restrictions || !monacoRef.current || !editorRef.current) return;
+      SetConstraints(monacoRef.current, editorRef.current, restrictions);
+    }, [restrictions]);
+
+    return (
+      <>
+        <div className="h-full w-full bg-slate-300 p-24 ">
+          <div className="mx-auto max-w-screen-xl">
+            <div
+              className={clsx(
+                `hover:animate-rainbow relative rounded-xl bg-red-400 p-7 transition-all duration-300`
+                // {
+                //   "animate-border bg-gradient-to-tr from-slate-900  to-green-700 bg-[length:600%_600%]":
+                //     isIndexInArray(subject.challenges, currentChallenge)
+                //       ?.status === "GREEN",
+                //   "bg-green-800":
+                //     isIndexInArray(subject.challenges, currentChallenge)
+                //       ?.status === "SOLVED",
+                //   "bg-slate-900":
+                //     isIndexInArray(subject.challenges, currentChallenge)
+                //       ?.status !== "SOLVED",
+                // }
+              )}
+              ref={divRef}
+            >
+              <div className="relative overflow-hidden">
+                <Editor
+                  onValidate={handleEditorValidation}
+                  theme="vs-dark"
+                  height={"20rem"}
+                  onChange={() =>
+                    onTextChanged && editorRef.current?.getValue() && onTextChanged(editorRef.current?.getValue())
+                  }
+                  defaultValue={defaultValue}
+                  value={value}
+                  defaultLanguage="typescript"
+                  onMount={handleEditorDidMount}
+                  beforeMount={handleVoidPromise(handleEditorWillMount)}
+                />
+                {children}
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-    </>
-  );
-};
-
+      </>
+    );
+  }
+);
+MonacoWrapper.displayName = "MonacoWrapper";
 export default MonacoWrapper;
 function SetConstraints(
   monaco: Monaco,
   editor: editor.IStandaloneCodeEditor,
-  restrictions:
-    | SubjectWithIndexedChallenges["challenges"][number]["restrictions"]
-    | undefined
+  restrictions: RangeRestriction[]
 ) {
   const model = editor.getModel();
   // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment
@@ -166,21 +140,7 @@ function SetConstraints(
   // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
   constrainedInstance.addRestrictionsTo(
     model,
-    restrictions?.map(
-      ({
-        initialRow,
-        initialColumn,
-        finalRow,
-        finalColumn,
-        allowMultiline,
-        label,
-      }) =>
-        ({
-          range: [initialRow, initialColumn, finalRow, finalColumn],
-          label,
-          allowMultiline,
-        } as RangeRestriction)
-    )
+    restrictions?.map((restriction) => restriction)
   );
 }
 
@@ -197,39 +157,3 @@ function SetTypescriptDefaults(monaco: Monaco) {
     noUnusedParameters: false,
   });
 }
-
-function drawStars(ctx: CanvasRenderingContext2D) {
-  const numPoints = Math.floor(Math.random() * 4) + 2;
-
-  const outerRadius = 12;
-  const innerRadius = outerRadius / 2;
-  ctx.beginPath();
-  ctx.moveTo(0, 0 - outerRadius);
-
-  for (let n = 1; n < numPoints * 2; n++) {
-    const radius = n % 2 === 0 ? outerRadius : innerRadius;
-    const x = radius * Math.sin((n * Math.PI) / numPoints);
-    const y = -1 * radius * Math.cos((n * Math.PI) / numPoints);
-    ctx.lineTo(x, y);
-  }
-  ctx.fill();
-  ctx.closePath();
-}
-const GOLD_COLORS = [
-  "#FFD700", // Gold
-  "#D4AF37", // Goldenrod
-  "#FADA5E", // Lemon Curry
-  "#F9A602", // Orange Yellow
-  "#E1A95F", // Harvest Gold
-  "#E6BE8A", // Satin Sheen Gold
-  "#FCC200", // Golden Poppy
-  "#FFC200", // Cyber Yellow
-  "#FFDF00", // Yellow (Web)
-  "#ECD540", // Dandelion
-  "#F6E3CE", // Bisque
-  "#FFDB58", // Mustard
-  "#FFCC33", // Saffron
-  "#FFC87C", // Tuscany
-  "#C9AE5D", // Antique Brass
-  "#8C7853", // Mule Fawn
-];

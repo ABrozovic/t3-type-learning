@@ -59,7 +59,7 @@ export const shouldPrefetchNextBatch = <T extends { index: number }>(
   // Return false if itemList or itemCount is undefined, or nextIndex is greater than itemCount.
   if (!itemList || !itemCount || nextIndex > itemCount) {
     return [false, 0];
-  }  
+  }
   // Calculate the difference and direction between the current index and the next index.
   const difference = nextIndex - index;
   const direction = Math.sign(difference);
