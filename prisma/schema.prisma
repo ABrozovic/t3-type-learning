@@ -77,7 +77,7 @@ model Challenge {
   problem      String                 @db.Text
   solution     String                 @db.Text
   restrictions ChallengeRestriction[]
-  Subject      Subject?               @relation(fields: [subjectId], references: [id])
+  Subject      Subject?               @relation(fields: [subjectId], references: [id], onDelete: Cascade) 
   subjectId    String?
 
   @@index([subjectId])
@@ -91,7 +91,7 @@ model ChallengeRestriction {
   initialColumn  Int
   finalRow       Int
   finalColumn    Int
-  Challenge      Challenge? @relation(fields: [challengeId], references: [id])
+  Challenge      Challenge? @relation(fields: [challengeId], references: [id], onDelete: Cascade)
   challengeId    String?
 
   @@index([challengeId])

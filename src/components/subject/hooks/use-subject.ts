@@ -1,7 +1,10 @@
+import type {
+  ChallengeStatus,
+  SubjectWithIndexedChallenges,
+} from "@/server/api/routers/subject/get-subject";
+import { api } from "@/utils/api";
+import { shouldPrefetchNextBatch } from "@/utils/pagination-helper";
 import { useState } from "react";
-import type { SubjectWithIndexedChallenges } from "../../../server/api/routers/subjects/get-subject";
-import { api } from "../../../utils/api";
-import { shouldPrefetchNextBatch } from "../../../utils/pagination-helper";
 type ChallengeQuery = {
   slug: string;
   skip: number;
@@ -42,9 +45,7 @@ export const useSubject = ({ skip, take, slug, page }: ChallengeQuery) => {
   };
 
   const currentChallenge = data?.challenges[currentChallengeIndex];
-  const updateStatus = (
-    status: SubjectWithIndexedChallenges["challenges"][number]["status"]
-  ) => {
+  const updateStatus = (status: ChallengeStatus) => {
     if (!currentChallenge) return;
     const updatedChallenges = {
       ...data.challenges,
@@ -107,11 +108,16 @@ export const useSubject = ({ skip, take, slug, page }: ChallengeQuery) => {
     await prefetch(index);
     setCurrentChallengeIndexState(index);
   };
+  const isChallengeStatus = (status: ChallengeStatus) => {
+    return currentChallenge?.status == status;
+  };
+
   return {
     currentChallenge,
     data,
     updateStatus,
     updateText,
+    isChallengeStatus,
     currentChallengeIndex,
     setCurrentChallengeIndex,
   };

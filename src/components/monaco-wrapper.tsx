@@ -1,14 +1,19 @@
+import { handleVoidPromise } from "@/utils/handle-void-promises";
+import { loadStaticDts } from "@/utils/load-dts";
 import type { Monaco } from "@monaco-editor/react";
 import Editor from "@monaco-editor/react";
 import { constrainedEditor } from "constrained-editor-plugin";
 import type { editor } from "monaco-editor";
 import type { ReactNode } from "react";
 import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
-import type { RangeRestriction } from "../pages";
-import { handleVoidPromise } from "../utils/handle-void-promises";
-import { loadStaticDts } from "../utils/load-dts";
 import useElementSize from "./common/hooks/use-element-size";
 
+export type RangeRestriction = {
+  range: [number, number, number, number];
+  allowMultiline?: boolean;
+  label?: string;
+  validate?: () => void;
+};
 export type MonacoWrapperProps = {
   value?: string;
   defaultValue?: string;

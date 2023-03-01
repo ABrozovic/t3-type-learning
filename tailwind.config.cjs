@@ -5,7 +5,7 @@ const defaultTheme = require("tailwindcss/defaultTheme");
 module.exports = {
   content: ["./src/**/*.{js,ts,jsx,tsx}"],
   theme: {
-    animation: {      
+    animation: {
       border: "border 500ms ease-in forwards ",
     },
     extend: {
@@ -13,7 +13,6 @@ module.exports = {
         sans: ["Inter var", ...defaultTheme.fontFamily.sans],
       },
       keyframes: {
-
         border: {
           "0%": { backgroundPosition: "0% 50%" },
           "50%": { backgroundPosition: "50% 50%" },

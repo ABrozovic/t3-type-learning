@@ -8,6 +8,7 @@ import PageNumber from "./page-number";
 
 type PaginationProps = {
   defaultPage?: number;
+  pagesToDisplay?: number;
   numberOfPages: number | undefined;
   onPageChange: (pageNumber: number) => void;
 };
@@ -15,6 +16,7 @@ type PaginationProps = {
 export default function Pagination({
   defaultPage = 1,
   numberOfPages = 1,
+  pagesToDisplay = 6,
   onPageChange,
 }: PaginationProps) {
   const numOfPages = useRef(Array(numberOfPages).fill(0));
@@ -33,7 +35,7 @@ export default function Pagination({
       return pages;
     }
 
-    const PAGES_TO_DISPLAY = 6;
+    const PAGES_TO_DISPLAY = pagesToDisplay;
     const [LOWER_BOUNDARY, UPPER_BOUNDARY] =
       PAGES_TO_DISPLAY % 2 === 0
         ? [PAGES_TO_DISPLAY / 2, PAGES_TO_DISPLAY / 2 + 1]
