@@ -9,12 +9,12 @@ import { useRef, useState } from "react";
 import Confetti from "react-confetti";
 import superjson from "superjson";
 import useElementSize from "../components/common/hooks/use-element-size";
+import Pagination from "../components/pagination/pagination";
 import { appRouter } from "../server/api/root";
 import { createTRPCContext } from "../server/api/trpc";
 import { api } from "../utils/api";
 import { handleVoidPromise } from "../utils/handle-void-promises";
 import { loadStaticDts } from "../utils/load-dts";
-import Pagination from "./example";
 export type RangeRestriction = {
   range: [number, number, number, number];
   allowMultiline?: boolean;
@@ -67,18 +67,20 @@ const Home: NextPage = () => {
       "🚀 ~ file: indextest.tsx:60 ~ flatChallenges:",
       flatChallenges
     );
-   
-    
-    console.log("🚀 ~ file: indextest.tsx:76 ~ updateData ~ shouldFetch:", shouldFetch)
-    if (!shouldFetch ) return;
-    
-    console.log("Fetching")
+
+    console.log(
+      "🚀 ~ file: indextest.tsx:76 ~ updateData ~ shouldFetch:",
+      shouldFetch
+    );
+    if (!shouldFetch) return;
+
+    console.log("Fetching");
     if (shouldFetch && !isFetchingPreviousPage) {
       const eh = flatChallenges?.find(
-        (id) => id === pages[queryPage.current]?.challenges[page-1]?.id
+        (id) => id === pages[queryPage.current]?.challenges[page - 1]?.id
       );
-      console.log("🚀 ~ file: indextest.tsx:80 ~ updateData ~ eh:", eh)
-      if(eh) return;
+      console.log("🚀 ~ file: indextest.tsx:80 ~ updateData ~ eh:", eh);
+      if (eh) return;
       await fetchPreviousPage();
     }
   };

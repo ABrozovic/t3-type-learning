@@ -15,7 +15,7 @@ export const getSubjectSchema = z.object({
   page: z
     .string()
     .optional()
-    .transform((value) => parseInt(value || "0")),
+    .transform((value) => parseInt(value || "1")),
 });
 export type GetSubject = z.infer<typeof getSubjectSchema>;
 
@@ -27,9 +27,9 @@ export const challengeStatusSchema = z
     z.literal("SOLVED"),
   ])
   .default("UNSOLVED");
-  interface IndexedChallenges<T> {
-    [index: number]: T & {status: z.infer<typeof challengeStatusSchema>};
-  }
+interface IndexedChallenges<T> {
+  [index: number]: T & { status: z.infer<typeof challengeStatusSchema> };
+}
 export type SubjectWithIndexedChallenges = NonNullable<
   RouterOutputs["subject"]["get"]
 >;
@@ -60,13 +60,20 @@ export const getSubject = async ({
   return {
     ...subject,
     _count: { challenges: subject._count.challenges - 1 },
-    challenges: subject.challenges.reduce((obj: IndexedChallenges<typeof subject.challenges[number]>, challenge, index) => {
-      obj[index + (skip === 0 ? 1 : skip)] = {
-        ...challenge,
-        status: "UNSOLVED",
-      };
-      return obj;
-    }, {}),
+    challenges: subject.challenges.reduce(
+      (
+        obj: IndexedChallenges<(typeof subject.challenges)[number]>,
+        challenge,
+        index
+      ) => {
+        obj[index + (skip === 0 ? 1 : skip)] = {
+          ...challenge,
+          status: "UNSOLVED",
+        };
+        return obj;
+      },
+      {}
+    ),
   };
 };
 

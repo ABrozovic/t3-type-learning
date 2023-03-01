@@ -82,11 +82,10 @@ function PageNumber({
       <div
         onClick={handleClick}
         className={clsx(
-          `relative inline-flex min-w-[1rem] cursor-pointer items-center justify-center border-t-2 pt-4 transition-all duration-200`,
+          `text-md relative inline-flex min-w-[1.5rem]  cursor-pointer items-center justify-center border-t-2 pt-4 font-medium transition-all duration-200`,
           {
-            "border-lime-500 px-4 pt-4 text-sm font-medium text-lime-600":
-              selected,
-            "border-transparent pr-1 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700":
+            "border-lime-500 px-4 pt-4  text-lime-600": selected,
+            " border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-300":
               !selected,
           }
         )}

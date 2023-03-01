@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { SubjectWithIndexedChallenges } from "../../../server/api/routers/subjects/get-subject";
 import { api } from "../../../utils/api";
+import { shouldPrefetchNextBatch } from "../../../utils/pagination-helper";
 type ChallengeQuery = {
   slug: string;
   skip: number;
@@ -9,7 +10,7 @@ type ChallengeQuery = {
 };
 
 export const useSubject = ({ skip, take, slug, page }: ChallengeQuery) => {
-  const [currentChallengeIndex, setCurrentChallengeIndex] = useState(page);
+  const [currentChallengeIndex, setCurrentChallengeIndexState] = useState(page);
 
   const utils = api.useContext();
   const { data } = api.subject.get.useQuery(
@@ -40,7 +41,6 @@ export const useSubject = ({ skip, take, slug, page }: ChallengeQuery) => {
     );
   };
 
-
   const currentChallenge = data?.challenges[currentChallengeIndex];
   const updateStatus = (
     status: SubjectWithIndexedChallenges["challenges"][number]["status"]
@@ -61,22 +61,58 @@ export const useSubject = ({ skip, take, slug, page }: ChallengeQuery) => {
     const updatedChallenges = {
       ...data.challenges,
       [currentChallengeIndex]: {
-        ...data.challenges[currentChallengeIndex],
+        ...currentChallenge,
         problem: text,
       },
     };
     setData(updatedChallenges);
   };
 
+  const prefetch = async (newPage: number) => {
+    const [prefetch, batch] = shouldPrefetchNextBatch(
+      Object.keys(data.challenges),
+      data._count?.challenges,
+      currentChallengeIndex,
+      newPage,
+      2,
+      take
+    );
 
+    if (prefetch) {
+      const newData = await utils.subject.get.fetch({
+        slug,
+        skip: `${take * batch}`,
+        take: `${take}`,
+      });
+
+      if (!newData || !newData.challenges) return;
+
+      const updatedChallenges = { ...newData.challenges, ...data.challenges };
+
+      utils.subject.get.setData(
+        {
+          slug,
+          skip: `${skip}`,
+          take: `${take}`,
+        },
+        {
+          ...newData,
+          _count: newData._count,
+          challenges: updatedChallenges,
+        }
+      );
+    }
+  };
+  const setCurrentChallengeIndex = async (index: number) => {
+    await prefetch(index);
+    setCurrentChallengeIndexState(index);
+  };
   return {
     currentChallenge,
     data,
-  
     updateStatus,
     updateText,
     currentChallengeIndex,
     setCurrentChallengeIndex,
   };
 };
-

@@ -1,7 +1,15 @@
 import Confetti from "react-confetti";
-import { drawStars, CONFETTI_GOLD_COLORS } from "./confetty-constants";
+import { CONFETTI_GOLD_COLORS, drawStars } from "./confetty-constants";
 
-const ConfettiWrapper = ({height=0, width=0}:{height:number|undefined, width:number|undefined}) => {
+const ConfettiWrapper = ({
+  height = 0,
+  width = 0,
+  onConfettiComplete,
+}: {
+  height: number | undefined;
+  width: number | undefined;
+  onConfettiComplete?: () => void;
+}) => {
   return (
     <Confetti
       confettiSource={{
@@ -16,6 +24,7 @@ const ConfettiWrapper = ({height=0, width=0}:{height:number|undefined, width:num
       recycle={false}
       wind={0.3}
       onConfettiComplete={(confetti) => {
+        onConfettiComplete && onConfettiComplete();
         confetti?.reset();
       }}
       drawShape={drawStars}

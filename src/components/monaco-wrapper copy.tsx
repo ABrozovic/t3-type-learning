@@ -6,12 +6,12 @@ import type { editor } from "monaco-editor";
 import { useEffect, useRef, useState } from "react";
 import Confetti from "react-confetti";
 import type { RangeRestriction } from "../pages";
-import Pagination from "../pages/example";
 import type { SubjectWithIndexedChallenges } from "../server/api/routers/subjects/get-subject";
 import { handleVoidPromise } from "../utils/handle-void-promises";
 import { loadStaticDts } from "../utils/load-dts";
 import useDebounce from "./common/hooks/use-debounce";
 import useElementSize from "./common/hooks/use-element-size";
+import Pagination from "./pagination/pagination";
 
 export type MonacoWrapperProps = {
   subject: SubjectWithIndexedChallenges;
@@ -126,8 +126,8 @@ const MonacoWrapper = ({
               numberOfPages={subject._count.challenges}
               onPageChange={handlePageChange}
             />
-            {isIndexInArray(subject.challenges, currentChallenge)
-              ?.status === "CHEERING" && (
+            {isIndexInArray(subject.challenges, currentChallenge)?.status ===
+              "CHEERING" && (
               <Confetti
                 confettiSource={{ x: -15, y: height, w: 5, h: -20 }}
                 initialVelocityY={30}

@@ -4,7 +4,7 @@ import {
   ArrowLongRightIcon,
 } from "@heroicons/react/20/solid";
 import { useMemo, useRef, useState } from "react";
-import PageNumber from "../components/page-number";
+import PageNumber from "./page-number";
 
 type PaginationProps = {
   defaultPage?: number;
@@ -88,10 +88,10 @@ export default function Pagination({
       <div className="-mt-px flex w-0 flex-1">
         <div
           onClick={() => handleArrowClick(-1)}
-          className="inline-flex items-center border-t-2 border-transparent pt-4 pr-1 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700"
+          className="inline-flex items-center border-t-2 border-transparent pt-4 pr-1 text-sm font-medium  hover:border-gray-300 hover:text-gray-300"
         >
           <ArrowLongLeftIcon
-            className="mr-3 h-5 w-5 text-gray-400"
+            className="mr-3 h-5 w-5 cursor-pointer text-gray-400 hover:text-gray-300"
             aria-hidden="true"
           />
         </div>
@@ -110,10 +110,10 @@ export default function Pagination({
       <div className="-mt-px flex w-0 flex-1 justify-end">
         <div
           onClick={() => handleArrowClick(1)}
-          className="inline-flex items-center border-t-2 border-transparent pt-4 pl-1 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700"
+          className="inline-flex items-center border-t-2 border-transparent pt-4 pl-1 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-300"
         >
           <ArrowLongRightIcon
-            className="ml-3 h-5 w-5 text-gray-400"
+            className="ml-3 h-5 w-5 cursor-pointer text-gray-400 hover:text-gray-300"
             aria-hidden="true"
           />
         </div>

@@ -9,13 +9,13 @@ import { useEffect, useRef, useState } from "react";
 import Confetti from "react-confetti";
 import superjson from "superjson";
 import useElementSize from "../components/common/hooks/use-element-size";
+import Pagination from "../components/pagination/pagination";
 import { appRouter } from "../server/api/root";
 import { createTRPCContext } from "../server/api/trpc";
 import { api } from "../utils/api";
 import { handleVoidPromise } from "../utils/handle-void-promises";
 import { loadStaticDts } from "../utils/load-dts";
 import { shouldPrefetchNextBatch } from "../utils/pagination-helper";
-import Pagination from "./example";
 export type RangeRestriction = {
   range: [number, number, number, number];
   allowMultiline?: boolean;

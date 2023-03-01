@@ -33,16 +33,6 @@ const useSlug = <T extends z.ZodTypeAny>(schema: T): UseSlug<T> => {
     }
   }, [router.isReady, router.query, schema]);
 
-  // const data = useMemo(() => {
-  //   if (!router.isReady || isReady.current) return;
-  //   try {
-  //     isReady.current = true;
-  //     return parse(schema, router.query);
-  //   } catch (err) {
-  //     console.error("Error in query");
-  //   }
-  // }, [router.isReady, router.query, schema]);
-
   return { isReady: isReady.current, query: data || {}, addQuery };
 };
 export default useSlug;

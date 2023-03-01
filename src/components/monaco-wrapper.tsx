@@ -1,6 +1,5 @@
 import type { Monaco } from "@monaco-editor/react";
 import Editor from "@monaco-editor/react";
-import clsx from "clsx";
 import { constrainedEditor } from "constrained-editor-plugin";
 import type { editor } from "monaco-editor";
 import type { ReactNode } from "react";
@@ -14,9 +13,7 @@ export type MonacoWrapperProps = {
   value?: string;
   defaultValue?: string;
   restrictions?: RangeRestriction[];
-  onPageChanged?: (page: number) => void;
   onValidate?: (errors: number) => void;
-  onConfettiComplete?: () => void;
   onTextChanged?: (text: string) => void;
   children?: ReactNode;
 };
@@ -27,9 +24,7 @@ const MonacoWrapper = forwardRef(
       defaultValue,
       value,
       restrictions,
-      onPageChanged,
       onValidate,
-      onConfettiComplete,
       onTextChanged,
       children,
     }: MonacoWrapperProps,
@@ -82,46 +77,26 @@ const MonacoWrapper = forwardRef(
     }, [restrictions]);
 
     return (
-      <>
-        <div className="h-full w-full bg-slate-300 p-24 ">
-          <div className="mx-auto max-w-screen-xl">
-            <div
-              className={clsx(
-                `hover:animate-rainbow relative rounded-xl bg-red-400 p-7 transition-all duration-300`
-                // {
-                //   "animate-border bg-gradient-to-tr from-slate-900  to-green-700 bg-[length:600%_600%]":
-                //     isIndexInArray(subject.challenges, currentChallenge)
-                //       ?.status === "GREEN",
-                //   "bg-green-800":
-                //     isIndexInArray(subject.challenges, currentChallenge)
-                //       ?.status === "SOLVED",
-                //   "bg-slate-900":
-                //     isIndexInArray(subject.challenges, currentChallenge)
-                //       ?.status !== "SOLVED",
-                // }
-              )}
-              ref={divRef}
-            >
-              <div className="relative overflow-hidden">
-                <Editor
-                  onValidate={handleEditorValidation}
-                  theme="vs-dark"
-                  height={"20rem"}
-                  onChange={() =>
-                    onTextChanged && editorRef.current?.getValue() && onTextChanged(editorRef.current?.getValue())
-                  }
-                  defaultValue={defaultValue}
-                  value={value}
-                  defaultLanguage="typescript"
-                  onMount={handleEditorDidMount}
-                  beforeMount={handleVoidPromise(handleEditorWillMount)}
-                />
-                {children}
-              </div>
-            </div>
-          </div>
+      <div className="h-full w-full" ref={divRef}>
+        <div className="relative overflow-hidden">
+          <Editor
+            onValidate={handleEditorValidation}
+            theme="vs-dark"
+            height={"20rem"}
+            onChange={() =>
+              onTextChanged &&
+              editorRef.current?.getValue() &&
+              onTextChanged(editorRef.current?.getValue())
+            }
+            defaultValue={defaultValue}
+            value={value}
+            defaultLanguage="typescript"
+            onMount={handleEditorDidMount}
+            beforeMount={handleVoidPromise(handleEditorWillMount)}
+          />
+          {children}
         </div>
-      </>
+      </div>
     );
   }
 );
