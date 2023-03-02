@@ -1,3 +1,4 @@
+import { RangeRestriction } from "@/components/monaco-wrapper";
 import type {
   ChallengeStatus,
   SubjectWithIndexedChallenges,
@@ -111,11 +112,19 @@ export const useSubject = ({ skip, take, slug, page }: ChallengeQuery) => {
   const isChallengeStatus = (status: ChallengeStatus) => {
     return currentChallenge?.status == status;
   };
+  const mapRestrictions=()=>{
+    return currentChallenge?.restrictions.map((r) => ({
+      label: r.label,
+      allowMultiline: r.allowMultiline,
+      range: [r.initialRow, r.initialColumn, r.finalRow, r.finalColumn],
+    })) as RangeRestriction[];
+  }
 
   return {
     currentChallenge,
     data,
     updateStatus,
+    mapRestrictions,
     updateText,
     isChallengeStatus,
     currentChallengeIndex,

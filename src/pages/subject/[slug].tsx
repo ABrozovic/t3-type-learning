@@ -27,11 +27,13 @@ export default function Subject({ page, skip, take, slug }: SubjectProps) {
   const subject = useSubject({ skip, take, slug, page });
   const monacoRef = useRef<MonacoRef>(null);
   const [text, setText] = useState(subject?.currentChallenge?.problem);
+
   useEffect(
-    () =>
+    () => {
       setText(
         subject?.data.challenges[subject?.currentChallengeIndex || 0]?.problem
-      ),
+      );
+    },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [subject?.currentChallengeIndex]
   );
@@ -52,11 +54,14 @@ export default function Subject({ page, skip, take, slug }: SubjectProps) {
   };
 
   return (
-    <div className="h-full w-full bg-slate-300 p-24 ">
-      <div className="mx-auto max-w-screen-xl">
+    <div className="flex h-full w-full flex-1 flex-col justify-start  bg-slate-300 px-2 text-center  font-extrabold leading-none tracking-tight md:p-8">
+      <h1 className="inline-block py-3 text-4xl text-gray-800 underline [text-shadow:_0_3px_0_rgb(0_0_0_/_15%)] md:text-5xl lg:text-6xl">
+        {subject.data.name} + {subject?.currentChallenge?.status}
+      </h1>
+      <div className="flex flex-1 justify-center md:items-center">
         <div
           className={clsx(
-            `relative rounded-xl p-7 transition-all duration-300`,
+            `relative h-full w-full max-w-screen-xl rounded-xl p-7 transition-all duration-300`,
             {
               "animate-border bg-gradient-to-tr from-neutral-800 to-slate-800 bg-[length:400%_400%]":
                 subject.isChallengeStatus("GREEN"),
@@ -68,11 +73,7 @@ export default function Subject({ page, skip, take, slug }: SubjectProps) {
           <MonacoWrapper
             ref={monacoRef}
             value={text}
-            restrictions={subject.currentChallenge?.restrictions.map((r) => ({
-              label: r.label,
-              allowMultiline: r.allowMultiline,
-              range: [r.initialRow, r.initialColumn, r.finalRow, r.finalColumn],
-            }))}
+            restrictions={subject?.mapRestrictions()}
             onTextChanged={(text) =>
               setTimeout(() => subject.updateText(text), 200)
             }

@@ -87,7 +87,7 @@ const MonacoWrapper = forwardRef(
           <Editor
             onValidate={handleEditorValidation}
             theme="vs-dark"
-            height={"20rem"}
+            height={"65vh"}
             onChange={() =>
               onTextChanged &&
               editorRef.current?.getValue() &&
