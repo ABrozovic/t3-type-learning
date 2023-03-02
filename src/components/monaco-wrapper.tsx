@@ -5,7 +5,7 @@ import Editor from "@monaco-editor/react";
 import { constrainedEditor } from "constrained-editor-plugin";
 import type { editor } from "monaco-editor";
 import type { ReactNode } from "react";
-import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
+import { forwardRef, useImperativeHandle, useRef } from "react";
 import useElementSize from "./common/hooks/use-element-size";
 
 export type RangeRestriction = {
@@ -38,21 +38,32 @@ const MonacoWrapper = forwardRef(
     const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
     const monacoRef = useRef<Monaco | null>(null);
     const [divRef, { width, height }] = useElementSize();
-    useImperativeHandle(
-      ref,
-      () => {
-        return {
-          getWidth() {
-            return width;
-          },
-          getHeight() {
-            return height;
-          },
-        };
-      },
-      [height, width]
-    );
+    useImperativeHandle(ref, () => {
+      return {
+        getWidth() {
+          return width;
+        },
+        getHeight() {
+          return height;
+        },
+        setText(text: string) {
+          editorRef.current?.setValue(text);
+        },
+        getText() {
+          return editorRef.current?.getValue();
+        },
+        updateConstraints(restrictions: RangeRestriction[]) {
+          updateConstraints(restrictions);
+        },
+        setReadOnly(value: boolean) {
+          editorRef.current?.updateOptions({ readOnly: value });
+        },
+      };
+    });
     function handleEditorValidation(markers: editor.IMarker[]) {
+      if (markers.length == 1 && markers[0] && markers[0].code === "6196") {
+        return onValidate && onValidate(0);
+      }
       onValidate && onValidate(markers.length);
     }
     async function handleEditorWillMount(monaco: Monaco) {
@@ -75,32 +86,41 @@ const MonacoWrapper = forwardRef(
       });
       monacoRef.current = monaco;
       editorRef.current = editor;
+      if (restrictions)
+        SetConstraints(monacoRef.current, editorRef.current, restrictions);
     }
-    useEffect(() => {
+
+    const updateConstraints = (restrictions: RangeRestriction[]) => {
       if (!restrictions || !monacoRef.current || !editorRef.current) return;
+      removeConstraints();
       SetConstraints(monacoRef.current, editorRef.current, restrictions);
-    }, [restrictions]);
+    };
+    const removeConstraints = () => {
+      const model = editorRef.current?.getModel();
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+      if (model?.disposeRestrictions) model?.disposeRestrictions();
+    };
 
     return (
-      <div className="h-full w-full" ref={divRef}>
-        <div className="relative overflow-hidden">
-          <Editor
-            onValidate={handleEditorValidation}
-            theme="vs-dark"
-            height={"65vh"}
-            onChange={() =>
-              onTextChanged &&
-              editorRef.current?.getValue() &&
-              onTextChanged(editorRef.current?.getValue())
-            }
-            defaultValue={defaultValue}
-            value={value}
-            defaultLanguage="typescript"
-            onMount={handleEditorDidMount}
-            beforeMount={handleVoidPromise(handleEditorWillMount)}
-          />
-          {children}
-        </div>
+      <div className="relative h-full w-full" ref={divRef}>
+        <Editor
+          onValidate={handleEditorValidation}
+          theme="vs-dark"
+          height={"65vh"}
+          onChange={() =>
+            onTextChanged &&
+            editorRef.current &&
+            onTextChanged(editorRef.current?.getValue())
+          }
+          defaultValue={defaultValue}
+          value={value}
+          defaultLanguage="typescript"
+          onMount={handleEditorDidMount}
+          beforeMount={handleVoidPromise(handleEditorWillMount)}
+        />
+        {children}
       </div>
     );
   }
@@ -133,6 +153,7 @@ function SetTypescriptDefaults(monaco: Monaco) {
     strictNullChecks: true,
     noEmit: true,
     esModuleInterop: true,
+    allowUnusedLabels: true,
     noUnusedLocals: false,
     noUnusedParameters: false,
   });

@@ -1,4 +1,4 @@
-import { RangeRestriction } from "@/components/monaco-wrapper";
+import type { RangeRestriction } from "@/components/monaco-wrapper";
 import type {
   ChallengeStatus,
   SubjectWithIndexedChallenges,
@@ -46,25 +46,14 @@ export const useSubject = ({ skip, take, slug, page }: ChallengeQuery) => {
   };
 
   const currentChallenge = data?.challenges[currentChallengeIndex];
-  const updateStatus = (status: ChallengeStatus) => {
+  const updateChallenge = (status?: ChallengeStatus, text?: string) => {
     if (!currentChallenge) return;
     const updatedChallenges = {
       ...data.challenges,
       [currentChallengeIndex]: {
         ...currentChallenge,
-        status: status,
-      },
-    };
-    setData(updatedChallenges);
-  };
-
-  const updateText = (text: string) => {
-    if (!currentChallenge) return;
-    const updatedChallenges = {
-      ...data.challenges,
-      [currentChallengeIndex]: {
-        ...currentChallenge,
-        problem: text,
+        status: status ? status : currentChallenge.status,
+        problem: text ? text : currentChallenge.problem,
       },
     };
     setData(updatedChallenges);
@@ -112,20 +101,19 @@ export const useSubject = ({ skip, take, slug, page }: ChallengeQuery) => {
   const isChallengeStatus = (status: ChallengeStatus) => {
     return currentChallenge?.status == status;
   };
-  const mapRestrictions=()=>{
+  const mapRestrictions = () => {
     return currentChallenge?.restrictions.map((r) => ({
       label: r.label,
       allowMultiline: r.allowMultiline,
       range: [r.initialRow, r.initialColumn, r.finalRow, r.finalColumn],
     })) as RangeRestriction[];
-  }
+  };
 
   return {
     currentChallenge,
     data,
-    updateStatus,
-    mapRestrictions,
-    updateText,
+    updateChallenge,
+    mapRestrictions,    
     isChallengeStatus,
     currentChallengeIndex,
     setCurrentChallengeIndex,

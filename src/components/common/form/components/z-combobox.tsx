@@ -40,7 +40,7 @@ export const ZCombobox = forwardRef<HTMLInputElement, ZCombobox>(
               .includes(query.toLowerCase().replace(/\s+/g, ""))
           );
     return (
-      <div className="">
+      <div className="relative">
         <label
           htmlFor={register?.name}
           className="block text-sm font-medium text-gray-700"
@@ -77,49 +77,54 @@ export const ZCombobox = forwardRef<HTMLInputElement, ZCombobox>(
             leaveTo="opacity-0"
             afterLeave={() => setQuery("")}
           >
-            <Combobox.Options
-              className=" z-50 mt-1 max-h-[50%] w-full overflow-auto rounded-md bg-white px-3   py-1 text-base 
+            <div className="absolute w-full">
+              <Combobox.Options
+                className="relative z-50 mt-1 max-h-[50%] w-full overflow-auto rounded-md bg-white px-3   py-1 text-base 
             shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm"
-            >
-              {filteredValues?.length === 0 && query !== "" ? (
-                <div className="relative cursor-default select-none py-2 px-4 text-gray-700">
-                  Zero results.
-                </div>
-              ) : (
-                filteredValues?.map((value) => (
-                  <Combobox.Option
-                    key={value.id}
-                    className={({ active, selected }) =>
-                      `relative w-full cursor-default select-none py-2 pl-4 pr-6 ${
-                        active ? "bg-indigo-600 text-white " : "text-gray-900"
-                      } ${selected ? "pl-6" : ""}`
-                    }
-                    value={value}
-                  >
-                    {({ selected, active }) => (
-                      <>
-                        <span
-                          className={`block truncate ${
-                            selected ? "font-extrabold" : "font-normal"
-                          }`}
-                        >
-                          {value.name}
-                        </span>
-                        {selected ? (
+              >
+                {filteredValues?.length === 0 && query !== "" ? (
+                  <div className="relative cursor-default select-none py-2 px-4 text-gray-700">
+                    Zero results.
+                  </div>
+                ) : (
+                  filteredValues?.map((value) => (
+                    <Combobox.Option
+                      key={value.id}
+                      className={({ active, selected }) =>
+                        `relative w-full cursor-default select-none py-2 pl-4 pr-6 ${
+                          active ? "bg-indigo-600 text-white " : "text-gray-900"
+                        } ${selected ? "pl-6" : ""}`
+                      }
+                      value={value}
+                    >
+                      {({ selected, active }) => (
+                        <>
                           <span
-                            className={`w-fullright-0 absolute inset-y-0 left-0 top-0 flex items-center  ${
-                              active ? "text-white" : "text-indigo-600"
+                            className={`block truncate ${
+                              selected ? "font-extrabold" : "font-normal"
                             }`}
                           >
-                            <CheckIcon className="h-5 w-5" aria-hidden="true" />
+                            {value.name}
                           </span>
-                        ) : null}
-                      </>
-                    )}
-                  </Combobox.Option>
-                ))
-              )}
-            </Combobox.Options>
+                          {selected ? (
+                            <span
+                              className={`w-fullright-0 absolute inset-y-0 left-0 top-0 flex items-center  ${
+                                active ? "text-white" : "text-indigo-600"
+                              }`}
+                            >
+                              <CheckIcon
+                                className="h-5 w-5"
+                                aria-hidden="true"
+                              />
+                            </span>
+                          ) : null}
+                        </>
+                      )}
+                    </Combobox.Option>
+                  ))
+                )}
+              </Combobox.Options>
+            </div>
           </Transition>
         </Combobox>
         {error && <p className="mt-2 text-sm text-red-600">{error}</p>}

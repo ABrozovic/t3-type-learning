@@ -72,7 +72,7 @@ export default function Pagination({
       -2,
       pages[pages.length - 1],
     ];
-  }, [currentPage]);
+  }, [currentPage, pagesToDisplay]);
   const handleArrowClick = (index: number) => {
     setCurrentPage((page) => {
       if (page + index === 0 || page + index > numOfPages.current.length)
