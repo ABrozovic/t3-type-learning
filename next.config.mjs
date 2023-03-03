@@ -26,9 +26,9 @@ const config = {
   webpack: (config) => {
     config.plugins = [
       ...config.plugins,
-      new CopyWebpackPlugin({
-        patterns: [{ from: "node_modules/@types/", to: "./public/types" }],
-      }),
+      // new CopyWebpackPlugin({
+      //   patterns: [{ from: "node_modules/@types/", to: "./public/types" }],
+      // }),
     ];
     return config;
   },
