@@ -19,7 +19,7 @@ type ComboboxValue = {
 
 type ZCombobox = {
   label?: string;
-  values: ComboboxValue[];
+  values: ComboboxValue[] ;
   register?: UseFormRegisterReturn;
   defaultFirst?: boolean;
   onChange?: (value: ComboboxValue) => void;
@@ -132,6 +132,4 @@ export const ZCombobox = forwardRef<HTMLInputElement, ZCombobox>(
     );
   }
 );
-
-export default ZCombobox;
 ZCombobox.displayName = "forwardRef(ZCombobox)";

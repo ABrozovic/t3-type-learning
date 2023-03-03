@@ -5,6 +5,7 @@ export const challengeSchema = z.object({
   subjectId: z
     .string({ required_error: "Subject is Required" })
     .min(1, { message: "Subject is Required" }),
+  name: z.string().min(1, { message: "Name is Required" }),
   problem: z.string().min(1, { message: "Problem is Required" }),
   solution: z.string().min(1, { message: "Solution is Required" }),
 });
@@ -40,6 +41,7 @@ export const createChallenge = ({
           id: data.subjectId,
         },
       },
+      name: data.name,
       problem: data.problem,
       solution: data.solution,
       restrictions: {

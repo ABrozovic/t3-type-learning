@@ -55,6 +55,4 @@ export const ZInput = forwardRef<HTMLInputElement, ZInput>(
     );
   }
 );
-
-export default ZInput;
 ZInput.displayName = "forwardRef(Zinput)";

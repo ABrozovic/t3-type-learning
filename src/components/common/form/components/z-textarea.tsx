@@ -56,5 +56,4 @@ export const ZTextarea = forwardRef<HTMLTextAreaElement, ZTextarea>(
   }
 );
 
-export default ZTextarea;
 ZTextarea.displayName = "forwardRef(ZTextarea)";

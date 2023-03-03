@@ -43,6 +43,7 @@ export default function Subject({ page, skip, take, slug }: SubjectProps) {
     }
   };
   const handlePageChange = async (page: number) => {
+    if (subject.currentChallengeIndex === page) return;
     if (currentTab === "Problem") {
       subject.updateChallenge(undefined, getText());
     } else {

@@ -74,10 +74,11 @@ model Subject {
 
 model Challenge {
   id           String                 @id @default(cuid())
+  name         String                 
   problem      String                 @db.Text
   solution     String                 @db.Text
   restrictions ChallengeRestriction[]
-  Subject      Subject?               @relation(fields: [subjectId], references: [id], onDelete: Cascade) 
+  Subject      Subject?               @relation(fields: [subjectId], references: [id], onDelete: Cascade)
   subjectId    String?
 
   @@index([subjectId])

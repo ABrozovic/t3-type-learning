@@ -1,50 +1,47 @@
-import { RestrictionRow } from "@/components/challenge/restriction-row";
 import { ZCombobox } from "@/components/common/form/components/z-combobox";
 import { ZInput } from "@/components/common/form/components/z-input";
 import { ZTextarea } from "@/components/common/form/components/z-textarea";
 import { useZodForm } from "@/components/common/form/use-zod-form";
 import Form from "@/components/common/form/zod-form";
-import type { CreateChallenge } from "@/server/api/routers/challenge/create-challenge";
-import { createChallengeSchema } from "@/server/api/routers/challenge/create-challenge";
+import { idSchema } from "@/components/common/schema/query";
+import { getSSGProxy } from "@/lib/ssg-helper";
+import type { UpdateChallenge } from "@/server/api/routers/challenge/update-challenge";
+import { updateChallengeSchema } from "@/server/api/routers/challenge/update-challenge";
 import { api } from "@/utils/api";
-import type { ChangeEvent } from "react";
-import { useState } from "react";
+import type {
+  GetServerSidePropsContext,
+  InferGetServerSidePropsType,
+} from "next";
 import { Controller, useFieldArray } from "react-hook-form";
 
-const Challenge = () => {
-  const form = useZodForm({ schema: createChallengeSchema });
-  const [hasRestrictions, setHasRestrictions] = useState(false);
-  const createChallenge = api.challenge.create.useMutation();
-  const { data: subjects } = api.subject.getAll.useQuery();
-
+type EditChallengeProps = Required<
+  InferGetServerSidePropsType<typeof getServerSideProps>
+>;
+const EditChallenge = ({ id }: EditChallengeProps) => {
+  const { data: challenge } = api.challenge.get.useQuery({ id });
+  const form = useZodForm({
+    schema: updateChallengeSchema,
+    defaultValues: {
+      id,
+      name: challenge?.name,
+      problem: challenge?.problem,
+      solution: challenge?.solution,
+      subjectId: challenge?.subjectId as string,
+    },
+  });
+  const updateChallenge = api.challenge.update.useMutation();
   const { fields, append, remove } = useFieldArray({
     control: form.control,
     name: "restrictions",
   });
-  const onSubmit = (values: CreateChallenge) => {
-    createChallenge.mutate(values);
+  const onSubmit = (values: UpdateChallenge) => {
+    updateChallenge.mutate(values);
   };
-  
-  const handleHasRestrictionsToggle = (e: ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.checked;
-    if (value === hasRestrictions) return;
-    if (value) {
-      setHasRestrictions(value);
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
-      append({});
-    } else {
-      setHasRestrictions(value);
-      for (let i = 0; i < fields.length; i++) {
-        remove(i);
-      }
-    }
-  };
-  if (!subjects) return null;
+  if (!challenge) return null;
   return (
     <div className="flex flex-grow flex-col bg-slate-200">
       <div className="flex justify-center">
-        <Form<CreateChallenge>
+        <Form<UpdateChallenge>
           logger
           form={form}
           onSubmit={onSubmit}
@@ -57,10 +54,13 @@ const Challenge = () => {
               render={({ field }) => (
                 <ZCombobox
                   {...field}
-                  values={subjects.map((subject) => ({
-                    id: subject.id,
-                    name: subject.name,
-                  }))}
+                  values={[
+                    {
+                      id: challenge.subjectId as string,
+                      name: challenge.Subject?.name as string,
+                    },
+                  ]}
+                  defaultFirst
                   errors={form.formState.errors}
                   register={form.register("subjectId")}
                   label="Subject:"
@@ -71,7 +71,7 @@ const Challenge = () => {
 
             <div className="flex flex-col gap-4">
               <ZInput
-              type="text"
+                type="text"
                 label="Name:"
                 errors={form.formState.errors}
                 register={form.register("name")}
@@ -89,41 +89,9 @@ const Challenge = () => {
             </div>
             <div className="flex items-center gap-4">
               <span className="mt-1 text-gray-700">Has Restrictions?</span>
-              <ZInput
-                type="checkbox"
-                className="h-5 w-5"
-                onChange={handleHasRestrictionsToggle}
-              />
+              <ZInput type="checkbox" className="h-5 w-5" />
             </div>
-            {hasRestrictions && (
-              <div className="w-full">
-                <div className="space-y-4 ">
-                  <table className="w-full table-auto">
-                    <thead>
-                      <tr>
-                        <th className="w-[7%]">Label</th>
-                        <th className="w-[30%]">Initial Row</th>
-                        <th className="w-[25%]">Initial Col</th>
-                        <th className="w-[8%]">Final Row</th>
-                        <th className="w-[8%]">Final Col</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {fields.map((field, index) => {
-                        return (
-                          <RestrictionRow
-                            key={field.id}
-                            index={index}
-                            form={form}
-                            remove={remove}
-                          />
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
+
             <div className="flex  justify-between gap-7 ">
               <button
                 type="submit"
@@ -146,4 +114,20 @@ const Challenge = () => {
     </div>
   );
 };
-export default Challenge;
+
+export default EditChallenge;
+
+export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
+  const query = ctx.query;
+  const ssg = await getSSGProxy(ctx);
+  const data = idSchema.safeParse(query);
+  if (!data.success) return { props: {} };
+  const { id } = data.data;
+  await ssg.challenge.get.fetch({ id });
+  return {
+    props: {
+      trpcState: ssg.dehydrate(),
+      id,
+    },
+  };
+};
