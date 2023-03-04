@@ -62,7 +62,7 @@ export default function Subject({ page, skip, take, slug }: SubjectProps) {
         label: r.label,
         allowMultiline: r.allowMultiline,
         range: [r.initialRow, r.initialColumn, r.finalRow, r.finalColumn],
-      })) as RangeRestriction[]
+      })) as RangeRestriction[],
     );
   };
 
@@ -100,7 +100,7 @@ export default function Subject({ page, skip, take, slug }: SubjectProps) {
                 subject.isChallengeStatus("GREEN"),
               "bg-slate-800": subject.isChallengeStatus("SOLVED"),
               "bg-neutral-800": !subject.isChallengeStatus("SOLVED"),
-            }
+            },
           )}
         >
           <div className="flex h-9 justify-end gap-1">
@@ -113,7 +113,7 @@ export default function Subject({ page, skip, take, slug }: SubjectProps) {
                     currentTab === "Problem",
                   " border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-300":
                     currentTab !== "Problem",
-                }
+                },
               )}
             >
               Problem
@@ -127,7 +127,7 @@ export default function Subject({ page, skip, take, slug }: SubjectProps) {
                     currentTab === "Solution",
                   " border-transparent pt-2 text-gray-500  hover:border-gray-300 hover:text-gray-300":
                     currentTab !== "Solution",
-                }
+                },
               )}
             >
               Solution

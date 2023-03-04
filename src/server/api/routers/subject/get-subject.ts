@@ -65,7 +65,7 @@ export const getSubject = async ({
       (
         obj: IndexedChallenges<(typeof subject.challenges)[number]>,
         challenge,
-        index
+        index,
       ) => {
         obj[index + (skip === 0 ? 1 : skip)] = {
           ...challenge,
@@ -73,7 +73,7 @@ export const getSubject = async ({
         };
         return obj;
       },
-      {}
+      {},
     ),
   };
 };

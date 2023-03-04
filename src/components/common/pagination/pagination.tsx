@@ -29,7 +29,7 @@ export default function Pagination({
   const getVisiblePages = useMemo(() => {
     const pages = Array.from(
       { length: numOfPages.current.length },
-      (_, i) => i + 1
+      (_, i) => i + 1,
     );
     if (pages.length <= 7) {
       return pages;
@@ -67,7 +67,7 @@ export default function Pagination({
       -1,
       ...pages.slice(
         index - (LOWER_BOUNDARY > 0 ? LOWER_BOUNDARY : 1),
-        index + UPPER_BOUNDARY
+        index + UPPER_BOUNDARY,
       ),
       -2,
       pages[pages.length - 1],

@@ -8,7 +8,11 @@ const ChallengeList = () => {
   return (
     <div className="flex flex-1 items-center justify-center">
       {subjectList?.map((subject) => (
-        <Link key={subject.id} href={`/admin/challenge/${subject.slug}`} className="text-3xl cursor-pointer">
+        <Link
+          key={subject.id}
+          href={`/admin/challenge/${subject.slug}`}
+          className="cursor-pointer text-3xl"
+        >
           {subject.name}
         </Link>
       ))}

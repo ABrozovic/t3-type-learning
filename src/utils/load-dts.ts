@@ -7,7 +7,7 @@ interface DtsLib {
 
 export const loadStaticDts = async (
   monaco: Monaco,
-  libs: string[]
+  libs: string[],
 ): Promise<void> => {
   const fetchPromises = libs.map(async (libName): Promise<DtsLib> => {
     const response = await fetch(`/types/${libName}/index.d.ts`);
@@ -21,7 +21,7 @@ export const loadStaticDts = async (
       //createModel(monaco, libName, dts);
       monaco.languages.typescript.typescriptDefaults.addExtraLib(
         `declare module "${libName}" { ${dts} }`,
-        `inmemory://model//${libName}.d.ts`
+        `inmemory://model//${libName}.d.ts`,
       );
     } else {
       try {
@@ -35,11 +35,11 @@ export const loadStaticDts = async (
 };
 export const createModel = (monaco: Monaco, libName: string, dts: string) => {
   const modelUri = monaco.Uri.parse(
-    `inmemory://model/types/${libName}/index.d.ts`
+    `inmemory://model/types/${libName}/index.d.ts`,
   );
   monaco.editor.createModel(
     `declare module "${libName}" { ${dts} }`,
     "typescript",
-    modelUri
+    modelUri,
   );
 };

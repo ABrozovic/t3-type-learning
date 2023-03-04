@@ -53,6 +53,6 @@ export const ZInput = forwardRef<HTMLInputElement, ZInput>(
         {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
       </div>
     );
-  }
+  },
 );
 ZInput.displayName = "forwardRef(Zinput)";

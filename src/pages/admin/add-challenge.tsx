@@ -24,7 +24,7 @@ const Challenge = () => {
   const onSubmit = (values: CreateChallenge) => {
     createChallenge.mutate(values);
   };
-  
+
   const handleHasRestrictionsToggle = (e: ChangeEvent<HTMLInputElement>) => {
     const value = e.target.checked;
     if (value === hasRestrictions) return;
@@ -71,7 +71,7 @@ const Challenge = () => {
 
             <div className="flex flex-col gap-4">
               <ZInput
-              type="text"
+                type="text"
                 label="Name:"
                 errors={form.formState.errors}
                 register={form.register("name")}

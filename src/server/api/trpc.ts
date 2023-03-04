@@ -49,7 +49,7 @@ export const createInnerTRPCContext = (opts: CreateContextOptions) => {
  * @see https://trpc.io/docs/context
  */
 export const createTRPCContext = async (
-  opts: CreateNextContextOptions | GetServerSidePropsContext
+  opts: CreateNextContextOptions | GetServerSidePropsContext,
 ) => {
   const { req, res } = opts;
 

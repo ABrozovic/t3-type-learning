@@ -17,7 +17,7 @@ export const updateChallenge = ({
   input: UpdateChallenge;
   prisma: PrismaClient;
 }) => {
-  const { restrictions, ...data } = input;  
+  const { restrictions, ...data } = input;
   return prisma.challenge.update({
     where: {
       id: input.id,

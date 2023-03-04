@@ -27,7 +27,7 @@ export const useSubject = ({ skip, take, slug, page }: ChallengeQuery) => {
       refetchOnMount: false,
       refetchOnWindowFocus: false,
       refetchOnReconnect: false,
-    }
+    },
   );
   if (!data) return;
   const setData = (challenges: SubjectWithIndexedChallenges["challenges"]) => {
@@ -41,7 +41,7 @@ export const useSubject = ({ skip, take, slug, page }: ChallengeQuery) => {
       {
         ...data,
         challenges,
-      }
+      },
     );
   };
 
@@ -66,7 +66,7 @@ export const useSubject = ({ skip, take, slug, page }: ChallengeQuery) => {
       currentChallengeIndex,
       newPage,
       2,
-      take
+      take,
     );
 
     if (prefetch) {
@@ -90,7 +90,7 @@ export const useSubject = ({ skip, take, slug, page }: ChallengeQuery) => {
           ...newData,
           _count: newData._count,
           challenges: updatedChallenges,
-        }
+        },
       );
     }
   };
@@ -113,7 +113,7 @@ export const useSubject = ({ skip, take, slug, page }: ChallengeQuery) => {
     currentChallenge,
     data,
     updateChallenge,
-    mapRestrictions,    
+    mapRestrictions,
     isChallengeStatus,
     currentChallengeIndex,
     setCurrentChallengeIndex,

@@ -19,7 +19,7 @@ type ComboboxValue = {
 
 type ZCombobox = {
   label?: string;
-  values: ComboboxValue[] ;
+  values: ComboboxValue[];
   register?: UseFormRegisterReturn;
   defaultFirst?: boolean;
   onChange?: (value: ComboboxValue) => void;
@@ -37,7 +37,7 @@ export const ZCombobox = forwardRef<HTMLInputElement, ZCombobox>(
             value.name
               .toLowerCase()
               .replace(/\s+/g, "")
-              .includes(query.toLowerCase().replace(/\s+/g, ""))
+              .includes(query.toLowerCase().replace(/\s+/g, "")),
           );
     return (
       <div className="relative">
@@ -130,6 +130,6 @@ export const ZCombobox = forwardRef<HTMLInputElement, ZCombobox>(
         {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
       </div>
     );
-  }
+  },
 );
 ZCombobox.displayName = "forwardRef(ZCombobox)";

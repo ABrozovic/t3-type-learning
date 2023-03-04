@@ -5,6 +5,11 @@ node_modules/
 dist/
 coverage/
 public/
+pnpm-lock.yaml
+node_modules/**
+.next
+.vercel
+e2e/setup/storage-state.json
 
 # eslint
 !.eslintrc

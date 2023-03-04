@@ -1,12 +1,10 @@
+import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import type { GetServerSidePropsContext } from "next";
 import {
   getServerSession,
-  type NextAuthOptions,
   type DefaultSession,
+  type NextAuthOptions,
 } from "next-auth";
-import DiscordProvider from "next-auth/providers/discord";
-import { PrismaAdapter } from "@next-auth/prisma-adapter";
-import { env } from "../env.mjs";
 import { prisma } from "./db";
 
 /**
@@ -17,7 +15,7 @@ import { prisma } from "./db";
  * @see https://next-auth.js.org/getting-started/typescript#module-augmentation
  **/
 declare module "next-auth" {
-  type UserRole ="ADMIN"|"USER"
+  type UserRole = "ADMIN" | "USER";
   interface Session extends DefaultSession {
     user: {
       id: string;
@@ -26,7 +24,7 @@ declare module "next-auth" {
     } & DefaultSession["user"];
   }
 
-  interface User {    
+  interface User {
     role: UserRole;
   }
 }
@@ -49,10 +47,6 @@ export const authOptions: NextAuthOptions = {
   },
   adapter: PrismaAdapter(prisma),
   providers: [
-    DiscordProvider({
-      clientId: env.DISCORD_CLIENT_ID,
-      clientSecret: env.DISCORD_CLIENT_SECRET,
-    }),
     /**
      * ...add more providers here
      *

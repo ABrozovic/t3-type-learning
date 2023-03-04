@@ -87,7 +87,7 @@ function PageNumber({
             "border-lime-500 px-4 pt-4  text-lime-600": selected,
             " border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-300":
               !selected,
-          }
+          },
         )}
       >
         {pageNumber < 0 ? (

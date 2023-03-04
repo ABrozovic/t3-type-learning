@@ -1,7 +1,5 @@
 // @ts-check
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-// const CopyWebpackPlugin = require("copy-webpack-plugin");
-import CopyWebpackPlugin from "copy-webpack-plugin";
+
 /**
  * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation.
  * This is especially useful for Docker builds.
@@ -23,14 +21,8 @@ const config = {
     defaultLocale: "en",
   },
 
-  webpack: (config) => {
-    config.plugins = [
-      ...config.plugins,
-      // new CopyWebpackPlugin({
-      //   patterns: [{ from: "node_modules/@types/", to: "./public/types" }],
-      // }),
-    ];
-    return config;
-  },
+  // We run these separately in CI, so we can skip them here.
+  eslint: { ignoreDuringBuilds: true },
+  typescript: { ignoreBuildErrors: true },
 };
 export default config;

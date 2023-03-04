@@ -1,5 +1,5 @@
 export const handleVoidPromise = <T, P extends unknown[]>(
-  promise: (...args: P) => Promise<T>
+  promise: (...args: P) => Promise<T>,
 ) => {
   return (...args: P) => {
     if (promise) {

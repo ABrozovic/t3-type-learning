@@ -9,7 +9,7 @@ import { FormProvider } from "react-hook-form";
 
 type FormProps<
   T extends FieldValues,
-  U extends FieldValues | undefined = undefined
+  U extends FieldValues | undefined = undefined,
 > = Omit<ComponentProps<"form">, "onSubmit"> & {
   logger?: boolean;
   form: UseFormReturn<T>;

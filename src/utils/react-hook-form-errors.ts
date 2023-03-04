@@ -4,7 +4,7 @@ type FieldErrorType = Merge<FieldError, FieldErrorsImpl>;
 
 export const getErrorMessage = (
   errors: FieldErrorType | undefined,
-  registerName: string
+  registerName: string,
 ) => {
   const name = getNameFromRegister(registerName);
   return isFieldError(errors?.[name])
@@ -12,7 +12,7 @@ export const getErrorMessage = (
     : undefined;
 };
 export const isFieldError = (
-  val: FieldError | FieldErrorType | undefined
+  val: FieldError | FieldErrorType | undefined,
 ): val is FieldError => {
   if (!val) return false;
   if ("message" in val) {

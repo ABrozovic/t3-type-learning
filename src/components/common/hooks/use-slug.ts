@@ -18,10 +18,10 @@ const useSlug = <T extends z.ZodTypeAny>(schema: T): UseSlug<T> => {
           query: { ...router.query, [name]: value },
         },
         undefined,
-        { shallow: true, scroll: true }
+        { shallow: true, scroll: true },
       );
     },
-    [router]
+    [router],
   );
   useEffect(() => {
     if (!router.isReady || isReady.current) return;
@@ -39,7 +39,7 @@ export default useSlug;
 
 export const parse = <T extends z.ZodTypeAny>(
   schema: T,
-  data: unknown
+  data: unknown,
 ): unknown => {
   try {
     return schema.parse(data);

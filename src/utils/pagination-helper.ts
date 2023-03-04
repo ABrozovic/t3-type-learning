@@ -4,7 +4,7 @@ export const shouldPrefetchNextBatch = (
   index: number,
   nextIndex: number,
   threshold: number,
-  batchSize: number
+  batchSize: number,
 ): [boolean, number] => {
   // Return false if itemList or itemCount is undefined, or nextIndex is greater than itemCount.
   if (!itemList || !itemCount || nextIndex > itemCount) {
@@ -18,7 +18,7 @@ export const shouldPrefetchNextBatch = (
   // Clamp the index of the item to prefetch to be within the list bounds.
   const clampedIndex = Math.min(
     Math.max(nextIndex + direction * (threshold + 1), 0),
-    itemCount - 1
+    itemCount - 1,
   );
 
   // Check if the item to prefetch is close to the start or end of the list.

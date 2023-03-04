@@ -33,7 +33,7 @@ const MonacoWrapper = forwardRef(
       onTextChanged,
       children,
     }: MonacoWrapperProps,
-    ref
+    ref,
   ) => {
     const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
     const monacoRef = useRef<Monaco | null>(null);
@@ -72,7 +72,7 @@ const MonacoWrapper = forwardRef(
     }
     function handleEditorDidMount(
       editor: editor.IStandaloneCodeEditor,
-      monaco: Monaco
+      monaco: Monaco,
     ) {
       editor.updateOptions({
         minimap: {
@@ -123,14 +123,14 @@ const MonacoWrapper = forwardRef(
         {children}
       </div>
     );
-  }
+  },
 );
 MonacoWrapper.displayName = "MonacoWrapper";
 export default MonacoWrapper;
 function SetConstraints(
   monaco: Monaco,
   editor: editor.IStandaloneCodeEditor,
-  restrictions: RangeRestriction[]
+  restrictions: RangeRestriction[],
 ) {
   const model = editor.getModel();
   // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment
@@ -140,7 +140,7 @@ function SetConstraints(
   // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
   constrainedInstance.addRestrictionsTo(
     model,
-    restrictions?.map((restriction) => restriction)
+    restrictions?.map((restriction) => restriction),
   );
 }
 
