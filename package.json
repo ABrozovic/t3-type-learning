@@ -11,7 +11,11 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "ts:check": "tsc --noEmit",
-    "start": "next start"
+    "start": "next start",
+    "test": "pnpm test:unit && pnpm test:e2e",
+    "test:unit": "vitest run",
+    "test:unit:watch": "vitest",
+    "test:e2e": "start-server-and-test dev 3000 \"NODE_ENV=test playwright test\""
   },
   "dependencies": {
     "@headlessui/react": "^1.7.11",
@@ -59,7 +63,9 @@
     "prettier-plugin-tailwindcss": "^0.2.3",
     "prisma": "^4.9.0",
     "tailwindcss": "^3.2.0",
-    "typescript": "^4.9.4"
+    "typescript": "^4.9.4",
+    "vite": "^4.1.4",
+    "vitest": "^0.29.2"
   },
   "ct3aMetadata": {
     "initVersion": "7.5.3"

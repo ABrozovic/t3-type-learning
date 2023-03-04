@@ -34,7 +34,8 @@
     "**/*.tsx",
     "**/*.cjs",
     "**/*.mjs",
-    ".eslintrc.cjs"
+    ".eslintrc.cjs",
+    "src/middleware.ts"
   ],
   "exclude": ["node_modules"]
 }
